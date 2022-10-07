@@ -4,6 +4,8 @@
 #include <tuple>
 #include <type_traits>
 
+#include "udf.h"
+
 namespace a::b::c
 {
   inline constexpr std::string_view str{"hello"};
@@ -23,6 +25,8 @@ int main()
   std::array arr{1, 2, 3, 4};
 
   std::cout << std::size(arr) << '\n';
+
+  std::cout << add(2, 3) << '\n';
 
   return 0;
 }
