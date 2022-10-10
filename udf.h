@@ -1,4 +1,3 @@
 #pragma once
 
-#include <iostream>
-int add(int, int);
+int add(int x, int y);
