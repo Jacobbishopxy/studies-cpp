@@ -11,5 +11,4 @@ add_executable(t_linkage_t t_linkage/main.cpp)
 install(
   TARGETS t_cpp20 t_linkage_t
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION bin/
 )

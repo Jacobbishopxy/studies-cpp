@@ -4,27 +4,13 @@
 namespace external_linkage
 {
 
-  int animals = 8;
-  const int i = 5;
+  int animals_e = 6;
+  const int i_e = 3;
 
   void call_me()
   {
-    printf("const int i=%d, static int animals = %d\n", i, animals);
-    printf("in Animal.cpp &i = %p,&animals = %p\n", &i, &animals);
+    printf("const int i=%d, static int animals = %d\n", i_e, animals_e);
+    printf("in animal_e.cpp &i = %p, &animals = %p\n", &i_e, &animals_e);
   }
 
-  void call()
-  {
-
-    // external linkage
-    printf("<external linkage>");
-    printf("before change animals:");
-    call_me();
-    animals = 2;
-    printf("after change animals:");
-    printf("animals = %d\n", animals);
-    call_me();
-
-    printf("in Feed.cpp &i = %p,&animals = %p\n", &i, &animals);
-  }
 }

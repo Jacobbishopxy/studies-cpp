@@ -4,11 +4,10 @@
 namespace internal_linkage
 {
   void call_me();
-  void call();
 
-  static int animals = 8;
+  static int animals_i = 8;
 
-  const int i = 5;
+  const int i_i = 5;
 }
 
 #endif

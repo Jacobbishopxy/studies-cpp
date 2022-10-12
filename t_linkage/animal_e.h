@@ -5,11 +5,10 @@ namespace external_linkage
 {
 
   void call_me();
-  void call();
 
-  extern int animals;
+  extern int animals_e;
 
-  extern const int i;
+  extern const int i_e;
 }
 
 #endif
