@@ -33,5 +33,5 @@
 
 .vscode
 /build
-/main.dSYM
+main.dSYM
 main
