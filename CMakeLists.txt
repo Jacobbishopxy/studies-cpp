@@ -7,8 +7,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(t_cpp20 t_cpp20/main.cpp)
 add_executable(t_linkage_t t_linkage/main.cpp)
+add_executable(t_global_const t_global_const/main.cpp)
 
 install(
-  TARGETS t_cpp20 t_linkage_t
+  TARGETS t_cpp20 t_linkage_t t_global_const
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
