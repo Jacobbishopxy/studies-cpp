@@ -31,7 +31,7 @@
 *.out
 *.app
 
-.vscode
+# .vscode
 /build
 main.dSYM
 main
