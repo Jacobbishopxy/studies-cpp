@@ -1,3 +1,10 @@
 {
-	"cSpell.words": ["consteval", "constexpr"]
+	"cSpell.words": [
+		"consteval",
+		"constexpr",
+		"lvalue",
+		"lvalues",
+		"rvalue",
+		"rvalues"
+	]
 }
