@@ -9,8 +9,9 @@ add_executable(t_cpp20 t_cpp20/main.cpp)
 add_executable(t_linkage_t t_linkage/main.cpp)
 add_executable(t_global_const t_global_const/main.cpp)
 add_executable(t_constexpr_consteval_fn t_constexpr_consteval_fn/main.cpp)
+add_executable(t_fn_template t_fn_template/main.cpp)
 
 install(
-  TARGETS t_cpp20 t_linkage_t t_global_const t_constexpr_consteval_fn
+  TARGETS t_cpp20 t_linkage_t t_global_const t_constexpr_consteval_fn t_fn_template
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
