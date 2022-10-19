@@ -62,7 +62,7 @@ void test_ptr() {
   printf("x: %d\n", x);
   printf("y: %d\n", y);
 
-  // *ptr1 = z; // 即使已经指向了可变左值，也无法解引用
+  // *ptr1 = z; // 即使已经指向了可变左值，也无法解引用修改值
 
   /**
    * @brief Const pointer
@@ -95,7 +95,7 @@ int main() {
 
 /**
  * const 即不可再次被赋值，const 右侧为不可再次被赋值类型。
- * - const int* 意为不可解引用
+ * - const int* 意为不可解引用修改值
  * - const ptr2{&x} 意为不可再重新指向
  */
 #if 0
