@@ -14,6 +14,10 @@
 
 - [t_constexpr_consteval_fn](./t_constexpr_consteval_fn/main.cpp): constexpr & consteval functions
 
+- [t_fn_template](./t_fn_template/main.cpp): function template
+
+- [t_ref_ptr](./t_ref_ptr/main.cpp): reference & pointer
+
 ## Vscode settings
 
 - Vscode user setting in order to solve [pointer-alignment issue](https://stackoverflow.com/a/52200544): `"C_Cpp.clang_format_fallbackStyle": "{ ColumnLimit: 120, PointerAlignment: Left}"`.
