@@ -11,6 +11,7 @@ add_executable(t_global_const t_global_const/main.cpp)
 add_executable(t_constexpr_consteval_fn t_constexpr_consteval_fn/main.cpp)
 add_executable(t_fn_template t_fn_template/main.cpp)
 add_executable(t_ref_ptr t_ref_ptr/main.cpp)
+add_executable(t_struct_size t_struct_size/main.cpp)
 
 install(
   TARGETS
@@ -20,5 +21,6 @@ install(
   t_constexpr_consteval_fn
   t_fn_template
   t_ref_ptr
+  t_struct_size
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
