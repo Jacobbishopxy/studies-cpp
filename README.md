@@ -18,6 +18,8 @@
 
 - [t_ref_ptr](./t_ref_ptr/main.cpp): reference & pointer
 
+- [t_struct_size](./t_struct_size/main.cpp): struct size & deduction guild
+
 ## Vscode settings
 
 - Vscode user setting in order to solve [pointer-alignment issue](https://stackoverflow.com/a/52200544): `"C_Cpp.clang_format_fallbackStyle": "{ ColumnLimit: 120, PointerAlignment: Left}"`.
