@@ -56,3 +56,24 @@
   - Note, `-std=c++2a` means to use C++20 to compile; `"${workspaceFolder}/t_cpp20/*.cpp"` means to scan all the .cpp file under `/t_cpp20` directory.
 
 - Each time adding an executable, add a new task as well.
+
+- Vscode intellisense `.vscode/c_cpp_properties.json`
+
+  - Ubuntu:
+
+    ```json
+    "configurations": [
+      {
+        ...
+        "configurationProvider": "ms-vscode.makefile-tools",
+        "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+      }
+    ]
+    ```
+
+## Todo
+
+- [catch2 test framework](https://github.com/catchorg/Catch2)
+- [vscode with googletest](https://computingonplains.wordpress.com/building-c-applications-with-visual-studio-code-unit-testing-with-googletest/)
+- [upgrade ubuntu version on wsl](https://dev.to/equiman/upgrade-ubuntu-version-on-wsl-3h10)
+- [discussion on googletest with CMake](https://stackoverflow.com/questions/62910867/how-to-run-tests-and-debug-google-test-project-in-vs-code)
