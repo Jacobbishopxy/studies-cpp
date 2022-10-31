@@ -28,11 +28,10 @@ class DateProClass {
   int year;
 
 public:
-  DateProClass(int m, int d, int y) {
-    month = m;
-    day = d;
-    year = y;
-  }
+  // prefer initializer list
+  DateProClass(int m, int d, int y) : month{m}, day{d}, year{y} {}
+
+  void print() { std::cout << month << '/' << day << '/' << year << std::endl; }
 };
 
 int main(int argc, char const* argv[]) {
@@ -40,6 +39,10 @@ int main(int argc, char const* argv[]) {
   d.setDate(12, 23, 1989);
 
   d.print();
+
+  DateProClass dp{8, 15, 2022};
+
+  dp.print();
 
   return 0;
 }
