@@ -20,6 +20,10 @@
 
 - [t_struct_size](./t_struct_size/main.cpp): struct size & deduction guild
 
+- [t_fn_ptr](./t_fn_ptr/main.cpp)
+
+- [t_algo](./t_algo/main.cpp)
+
 ## Vscode settings
 
 - Vscode user setting in order to solve [pointer-alignment issue](https://stackoverflow.com/a/52200544): `"C_Cpp.clang_format_fallbackStyle": "{ ColumnLimit: 120, PointerAlignment: Left}"`.
