@@ -22,10 +22,24 @@ public:
   }
 };
 
+class DateProClass {
+  int month;
+  int day;
+  int year;
+
+public:
+  DateProClass(int m, int d, int y) {
+    month = m;
+    day = d;
+    year = y;
+  }
+};
+
 int main(int argc, char const* argv[]) {
   DateClass d;
   d.setDate(12, 23, 1989);
 
   d.print();
+
   return 0;
 }
