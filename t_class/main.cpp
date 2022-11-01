@@ -31,8 +31,14 @@ public:
   // prefer initializer list
   DateProClass(int m, int d, int y) : month{m}, day{d}, year{y} {}
 
+  // constructor declaration
+  DateProClass(int y);
+
   void print() { std::cout << month << '/' << day << '/' << year << std::endl; }
 };
+
+// constructor definition
+DateProClass::DateProClass(int y) : month{1}, day{1}, year{y} {}
 
 int main(int argc, char const* argv[]) {
   DateClass d;
