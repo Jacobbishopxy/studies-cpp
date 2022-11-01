@@ -1,5 +1,10 @@
 #include <iostream>
 
+#include "DateProClass.h"
+
+/**
+ * Non-reusable class should be declared in its usage file.
+ */
 class DateClass {
   int month;
   int day;
@@ -15,30 +20,13 @@ public:
   void print() { std::cout << month << '/' << day << '/' << year << std::endl; }
 
   void copyFrom(const DateClass& d) {
-    // 基于类的访问控制，与 Rust 的 pub(crate) 类似
+    // same-class object's member is accessible
+    // works like Rust's `pub(crate)` announcement, but totally different mechanism
     month = d.month;
     day = d.day;
     year = d.year;
   }
 };
-
-class DateProClass {
-  int month;
-  int day;
-  int year;
-
-public:
-  // prefer initializer list
-  DateProClass(int m, int d, int y) : month{m}, day{d}, year{y} {}
-
-  // constructor declaration
-  DateProClass(int y);
-
-  void print() { std::cout << month << '/' << day << '/' << year << std::endl; }
-};
-
-// constructor definition
-DateProClass::DateProClass(int y) : month{1}, day{1}, year{y} {}
 
 int main(int argc, char const* argv[]) {
   DateClass d;
