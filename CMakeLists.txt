@@ -12,6 +12,9 @@ add_executable(t_constexpr_consteval_fn t_constexpr_consteval_fn/main.cpp)
 add_executable(t_fn_template t_fn_template/main.cpp)
 add_executable(t_ref_ptr t_ref_ptr/main.cpp)
 add_executable(t_struct_size t_struct_size/main.cpp)
+add_executable(t_algo t_algo/main.cpp)
+add_executable(t_class t_class/main.cpp)
+add_executable(t_friend_fn_cls t_friend_fn_cls/main.cpp)
 
 install(
   TARGETS
@@ -22,5 +25,8 @@ install(
   t_fn_template
   t_ref_ptr
   t_struct_size
+  t_algo
+  t_class
+  t_friend_fn_cls
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
