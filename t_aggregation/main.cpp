@@ -1,39 +1,42 @@
 
-#include <functional> // std::reference_wrapper
+#include <functional>  // std::reference_wrapper
 #include <iostream>
 #include <string>
 #include <vector>
 
 class Teacher {
-private:
+ private:
   std::string m_name{};
 
-public:
-  Teacher(const std::string &name) : m_name{name} {}
+ public:
+  Teacher(const std::string& name) : m_name{name} {}
 
-  const std::string &getName() const { return m_name; }
+  const std::string& getName() const { return m_name; }
 };
 
 using Teachers = std::vector<std::reference_wrapper<Teacher>>;
 
 class Department {
-private:
+ private:
   Teachers m_teachers{};
 
-public:
+ public:
   Department(const Teachers teachers) : m_teachers{teachers} {}
+
+  void add(Teacher& teacher) { m_teachers.push_back(teacher); }
 };
 
-int main(int argc, char const *argv[]) {
-
+int main(int argc, char const* argv[]) {
   Teacher jacob{"Jacob"};
   Teacher april{"April"};
 
-  Teachers teachers{{jacob, april}};
+  Teachers teachers{};
 
   {
-    //
     Department department{teachers};
+
+    department.add(jacob);
+    department.add(april);
   }
 
   std::cout << jacob.getName() << " still exists!\n";
