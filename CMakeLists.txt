@@ -15,6 +15,7 @@ add_executable(t_struct_size t_struct_size/main.cpp)
 add_executable(t_algo t_algo/main.cpp)
 add_executable(t_class t_class/main.cpp)
 add_executable(t_friend_fn_cls t_friend_fn_cls/main.cpp)
+add_executable(t_timing t_timing/main.cpp)
 
 install(
   TARGETS
@@ -28,5 +29,6 @@ install(
   t_algo
   t_class
   t_friend_fn_cls
+  t_timing
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )

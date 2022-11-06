@@ -6,19 +6,16 @@
 #include <tuple>
 #include <type_traits>
 
-namespace a::b::c
-{
-  inline constexpr std::string_view str{"hello"};
+namespace a::b::c {
+inline constexpr std::string_view str{"hello"};
 }
 
 template <class... T>
-std::tuple<std::size_t, std::common_type_t<T...>> sum(T... args)
-{
+std::tuple<std::size_t, std::common_type_t<T...>> sum(T... args) {
   return {sizeof...(T), (args + ...)};
 }
 
-int main()
-{
+int main() {
   auto [iNumbers, iSum]{sum(1, 2, 3)};
   std::cout << a::b::c::str << ' ' << iNumbers << ' ' << iSum << '\n';
 
