@@ -16,6 +16,9 @@ add_executable(t_algo t_algo/main.cpp)
 add_executable(t_class t_class/main.cpp)
 add_executable(t_friend_fn_cls t_friend_fn_cls/main.cpp)
 add_executable(t_timing t_timing/main.cpp)
+add_executable(t_composition t_composition/main.cpp)
+add_executable(t_aggregation t_aggregation/main.cpp)
+add_executable(t_association t_association/main.cpp)
 
 install(
   TARGETS
@@ -30,5 +33,8 @@ install(
   t_class
   t_friend_fn_cls
   t_timing
+  t_composition
+  t_aggregation
+  t_association
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
