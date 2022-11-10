@@ -19,6 +19,7 @@ add_executable(t_timing t_timing/main.cpp)
 add_executable(t_composition t_composition/main.cpp)
 add_executable(t_aggregation t_aggregation/main.cpp)
 add_executable(t_association t_association/main.cpp)
+add_executable(t_virtual_covariant_rtn t_virtual_covariant_rtn/main.cpp)
 
 install(
   TARGETS
@@ -36,5 +37,6 @@ install(
   t_composition
   t_aggregation
   t_association
+  t_virtual_covariant_rtn
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
