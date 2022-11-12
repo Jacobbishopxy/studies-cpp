@@ -13,6 +13,8 @@ class Circle : public Shape {
   Circle(Point centre, int radius) : m_centre{centre}, m_radius{radius} {}
 
   std::ostream& print(std::ostream& out) const override;
+
+  int getRadius() const;
 };
 
 #endif  // CIRCLE_H

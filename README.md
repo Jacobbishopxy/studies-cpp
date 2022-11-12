@@ -40,6 +40,8 @@
 
 1. [t_virtual_covariant_rtn](./t_virtual_covariant_rtn/main.cpp): virtual function's covariant return type
 
+1. [t_virtual_quiz](./t_virtual_quiz/main.cpp): class inheritance with virtual function and operation<<
+
 ## Vscode settings
 
 - C++ format in `settings.json`:
