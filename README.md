@@ -42,6 +42,8 @@
 
 1. [t_virtual_quiz](./t_virtual_quiz/main.cpp): class inheritance with virtual function and operation<<
 
+1. [t_std_init_list](./t_std_init_list/main.cpp): using `std::initializer_list` as a constructor's parameter, and by overloading operator= and operator[], customize a container class
+
 ## Vscode settings
 
 - C++ format in `settings.json`:
