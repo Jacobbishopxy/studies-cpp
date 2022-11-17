@@ -44,6 +44,8 @@
 
 1. [t_std_init_list](./t_std_init_list/main.cpp): using `std::initializer_list` as a constructor's parameter, and by overloading operator= and operator[], customize a container class
 
+1. [t_exception](./t_exception/main.cpp): customized exception (class/enum class)
+
 ## Vscode settings
 
 - C++ format in `settings.json`:
