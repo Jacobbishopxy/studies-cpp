@@ -2,15 +2,15 @@
 #include <string>
 #include <string_view>
 
-// Preferred, but no further information can be stored, such as descriptive
-// string.
+// Preferred for small use case, but no further information can be stored, such
+// as descriptive string.
 enum class ArrayExceptionEnum {
   OutOfRangeError,
   MaxLengthReachedError,
 };
 
-// Class's overhead is too high, not recommended. But on the other hand, it can
-// store extra information.
+// Class's overhead is very high, but on the other hand, it can store extra
+// information.
 class ArrayException {
  public:
   enum Type {
@@ -33,6 +33,24 @@ class ArrayException {
   const std::string& getInfo() const { return m_info; }
 
   // other member functions
+};
+
+// inherited from std::exception
+class ArrayExceptionStdExcp : public std::exception {
+ private:
+  std::string m_error{};
+
+ public:
+  ArrayExceptionStdExcp(std::string_view error) : m_error{error} {}
+
+  const char* what() const noexcept override { return m_error.c_str(); }
+};
+
+// inherited from std::runtime_error
+class ArrayExceptionStdRte : public std::runtime_error {
+ public:
+  ArrayExceptionStdRte(const std::string& error)
+      : std::runtime_error(error.c_str()) {}
 };
 
 int main(int argc, char const* argv[]) {
