@@ -44,6 +44,8 @@
 
 1. [t_std_init_list](./t_std_init_list/main.cpp): using `std::initializer_list` as a constructor's parameter, and by overloading operator= and operator[], customize a container class
 
+1. [t_partial_template_spec](./t_partial_template_spec/main.cpp): partial template specification for pointer and full template specification for `char*`
+
 1. [t_template_quiz](./t_template_quiz/main.cpp)
 
 1. [t_exception](./t_exception/main.cpp): customized exception (class/enum class)
