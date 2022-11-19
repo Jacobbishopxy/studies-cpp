@@ -6,49 +6,49 @@
 
 ## Study cases
 
-1. [t_cpp20](./t_cpp20/main.cpp): the first test case which is used for testing C++20 compiler
+1. [cpp20](./learn-cpp-codes/cpp20/main.cpp): the first test case which is used for testing C++20 compiler
 
-1. [t_linkage](./t_linkage/main.cpp): internal linkage vs. external linkage, printing out variables address to check differences
+1. [linkage](./learn-cpp-codes/linkage/main.cpp): internal linkage vs. external linkage, printing out variables address to check differences
 
-1. [t_global_const](./t_global_const/main.cpp): C++17 `inline constexpr`
+1. [global_const](./learn-cpp-codes/global_const/main.cpp): C++17 `inline constexpr`
 
-1. [t_constexpr_consteval_fn](./t_constexpr_consteval_fn/main.cpp): constexpr & consteval functions
+1. [constexpr_consteval_fn](./learn-cpp-codes/constexpr_consteval_fn/main.cpp): constexpr & consteval functions
 
-1. [t_fn_template](./t_fn_template/main.cpp): function template
+1. [fn_template](./learn-cpp-codes/fn_template/main.cpp): function template
 
-1. [t_ref_ptr](./t_ref_ptr/main.cpp): reference & pointer
+1. [ref_ptr](./learn-cpp-codes/ref_ptr/main.cpp): reference & pointer
 
-1. [t_struct_size](./t_struct_size/main.cpp): struct size & deduction guild
+1. [struct_size](./learn-cpp-codes/struct_size/main.cpp): struct size & deduction guild
 
-1. [t_fn_ptr](./t_fn_ptr/main.cpp): function pointer
+1. [fn_ptr](./learn-cpp-codes/fn_ptr/main.cpp): function pointer
 
-1. [t_algo](./t_algo/main.cpp): `#include <algorithm>` standard library usage
+1. [algo](./learn-cpp-codes/algo/main.cpp): `#include <algorithm>` standard library usage
 
-1. [t_class](./t_class/main.cpp): class declaration. Non-reusable class under its usage file; otherwise, split into `.h` and `.cpp` file (one for declaration and one for implementation)
+1. [class](./learn-cpp-codes/class/main.cpp): class declaration. Non-reusable class under its usage file; otherwise, split into `.h` and `.cpp` file (one for declaration and one for implementation)
 
-1. [t_friend_fn_cls](./t_friend_fn_cls/main.cpp): `friend` keyword can be used on a class or a member function. The former one means granting all members' accessibility; the latter one means granting specified member function the accessibility
+1. [friend_fn_cls](./learn-cpp-codes/friend_fn_cls/main.cpp): `friend` keyword can be used on a class or a member function. The former one means granting all members' accessibility; the latter one means granting specified member function the accessibility
 
-1. [t_composition](./t_composition/main.cpp)
+1. [composition](./learn-cpp-codes/composition/main.cpp)
 
-1. [t_aggregation](./t_aggregation/main.cpp)
+1. [aggregation](./learn-cpp-codes/aggregation/main.cpp)
 
-1. [t_association](./t_association/main.cpp)
+1. [association](./learn-cpp-codes/association/main.cpp)
 
-1. [t_timing](./t_timing/main.cpp): a simple helper tool to collect elapsed time
+1. [timing](./learn-cpp-codes/timing/main.cpp): a simple helper tool to collect elapsed time
 
-1. [t_multiple_inheritance](./t_multiple_inheritance/main.cpp): differences among `public`/`protected`/`private` and the usage of mixin
+1. [multiple_inheritance](./learn-cpp-codes/multiple_inheritance/main.cpp): differences among `public`/`protected`/`private` and the usage of mixin
 
-1. [t_virtual_covariant_rtn](./t_virtual_covariant_rtn/main.cpp): virtual function's covariant return type
+1. [virtual_covariant_rtn](./learn-cpp-codes/virtual_covariant_rtn/main.cpp): virtual function's covariant return type
 
-1. [t_virtual_quiz](./t_virtual_quiz/main.cpp): class inheritance with virtual function and operation<<
+1. [virtual_quiz](./learn-cpp-codes/virtual_quiz/main.cpp): class inheritance with virtual function and operation<<
 
-1. [t_std_init_list](./t_std_init_list/main.cpp): using `std::initializer_list` as a constructor's parameter, and by overloading operator= and operator[], customize a container class
+1. [std_init_list](./learn-cpp-codes/std_init_list/main.cpp): using `std::initializer_list` as a constructor's parameter, and by overloading operator= and operator[], customize a container class
 
-1. [t_partial_template_spec](./t_partial_template_spec/main.cpp): partial template specification for pointer and full template specification for `char*`
+1. [partial_template_spec](./learn-cpp-codes/partial_template_spec/main.cpp): partial template specification for pointer and full template specification for `char*`
 
-1. [t_template_quiz](./t_template_quiz/main.cpp)
+1. [template_quiz](./learn-cpp-codes/template_quiz/main.cpp)
 
-1. [t_exception](./t_exception/main.cpp): customized exception (class/enum class)
+1. [exception](./learn-cpp-codes/exception/main.cpp): customized exception (class/enum class)
 
 ## Vscode settings
 
@@ -80,7 +80,7 @@
       "-fcolor-diagnostics",
       "-fansi-escape-codes",
       "-g",
-      "${workspaceFolder}/t_cpp20/*.cpp",
+      "${workspaceFolder}/cpp20/*.cpp",
       "-o",
       "${fileDirname}/${fileBasenameNoExtension}"
     ]
@@ -93,13 +93,13 @@
       "-std=c++2a",
       "-fdiagnostics-color=always",
       "-g",
-      "${workspaceFolder}/t_cpp20/*.cpp",
+      "${workspaceFolder}/cpp20/*.cpp",
       "-o",
       "${fileDirname}/${fileBasenameNoExtension}"
     ]
     ```
 
-  - Note, `-std=c++2a` means to use C++20 to compile; `"${workspaceFolder}/t_cpp20/*.cpp"` means to scan all the .cpp file under `/t_cpp20` directory.
+  - Note, `-std=c++2a` means to use C++20 to compile; `"${workspaceFolder}/cpp20/*.cpp"` means to scan all the .cpp file under `/cpp20` directory.
 
 - Each time adding an executable, add a new task as well.
 
