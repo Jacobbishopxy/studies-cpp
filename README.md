@@ -1,10 +1,14 @@
 # Studies Cpp
 
+A personal C-plus-plus study note.
+
+## References
+
 [CMake tutorial](https://cmake.org/cmake/help/latest/guide/tutorial/index.html)
 
 [Learn Cpp](https://www.learncpp.com/)
 
-## Study cases
+## Practices
 
 1. [cpp20](./learn-cpp-codes/cpp20/main.cpp): the first test case which is used for testing C++20 compiler
 
