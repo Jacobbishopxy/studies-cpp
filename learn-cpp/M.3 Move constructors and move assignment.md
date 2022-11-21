@@ -1,0 +1,674 @@
+# Move constructors and move assignment
+
+首先让我们花点时间回顾一下拷贝语义。
+
+拷贝构造函数通过拷贝对象进行类的初始化。拷贝赋值用于拷贝一个类对象至另一个已存在的类对象。默认情况下，如果没有显式提供拷贝构造函数以及拷贝赋值操作符，C++ 将会提供它们。这些编译器提供的函数做浅拷贝，在类进行分配动态内存时可能会导致问题。因此处理动态内存的类需要重写这俩函数成为深拷贝。
+
+回到本章最开始 Auto_ptr 智能指针的例子：
+
+```cpp
+#include <iostream>
+
+template<typename T>
+class Auto_ptr3
+{
+  T* m_ptr;
+public:
+  Auto_ptr3(T* ptr = nullptr)
+    :m_ptr(ptr)
+  {
+  }
+
+  ~Auto_ptr3()
+  {
+    delete m_ptr;
+  }
+
+  // 拷贝构造函数
+  // 深拷贝 a.m_ptr 至 m_ptr
+  Auto_ptr3(const Auto_ptr3& a)
+  {
+    m_ptr = new T;
+    *m_ptr = *a.m_ptr;
+  }
+
+  // 拷贝赋值
+  // 深拷贝 a.m_ptr 至 m_ptr
+  Auto_ptr3& operator=(const Auto_ptr3& a)
+  {
+    // 自赋值检测
+    if (&a == this)
+      return *this;
+
+    // 释放任何持有的资源
+    delete m_ptr;
+
+    // 拷贝资源
+    m_ptr = new T;
+    *m_ptr = *a.m_ptr;
+
+    return *this;
+  }
+
+  T& operator*() const { return *m_ptr; }
+  T* operator->() const { return m_ptr; }
+  bool isNull() const { return m_ptr == nullptr; }
+};
+
+class Resource
+{
+public:
+  Resource() { std::cout << "Resource acquired\n"; }
+  ~Resource() { std::cout << "Resource destroyed\n"; }
+};
+
+Auto_ptr3<Resource> generateResource()
+{
+  Auto_ptr3<Resource> res{new Resource};
+  return res; // 这个返回值将唤起拷贝构造函数
+}
+
+int main()
+{
+  Auto_ptr3<Resource> mainres;
+  mainres = generateResource(); // 这个赋值将唤起拷贝赋值
+
+  return 0;
+}
+```
+
+上述代码中，使用了名为 `generateResource()` 的函数创建智能指针封装资源，接着传递给函数 `main()`，接着赋值给已存在的 `Auto_ptr3` 对象。打印：
+
+```txt
+Resource acquired
+Resource acquired
+Resource destroyed
+Resource acquired
+Resource destroyed
+Resource destroyed
+```
+
+很多资源的创建和销毁就是为了一个简单的程序！那么这里发生了什么？
+
+细看一下，有六个重要的步骤发生在该程序中（每个都打印了信息）：
+
+1. 在 `generateResource()` 中，本地变量 `res` 被创建并初始化了一个动态分配的 `Resource`，即第一次“Resource acquired”发生。
+
+1. `res` 值返回给 `main()`，因为 `res` 是本地变量 -- 由于在 `generateResource()` 结束后它将被销毁，因此不可以返回其地址或者引用。所以 `res` 被拷贝构造进了一个临时对象。因为拷贝构造函数是深拷贝，一个新的 `Resource` 在这里被分配，即第二次“Resource acquired”发生。
+
+1. `res` 离开作用域，销毁原有创造的 `Resource`，即发生第一次“Resource destroyed”。
+
+1. 通过拷贝赋值，临时对象被赋值给了 `mainres`。由于拷贝赋值同样也是一个深拷贝，新的 `Resource` 被分配，即发生第三次“Resource acquired”。
+
+1. 赋值表达式结束，临时对象离开表达式作用域并被销毁，即第二次“Resource destroyed”。
+
+1. 在 `main()` 结束时，`mainres` 离开作用域，即最后一次“Resource destroyed”。
+
+简单来说，因为调用了拷贝构造函数一次对 `res` 进行拷贝构造至临时对象，调用拷贝赋值一次进行拷贝临时对象至 `mainres`，最终就是总共分配与释放了三个独立的对象。
+
+低效，但是至少没有崩溃！
+
+然而，使用移动语义，我们可以做的更好。
+
+## 移动构造函数与移动赋值
+
+C++11 定义了两个新函数服务于移动语义：移动构造函数，移动赋值操作符。鉴于拷贝构造函数与拷贝赋值的目的是将一个对象拷贝至另一个，移动构造函数与移动赋值则是从一个对象移动资源的所有权至另一个（即通常而言对比拷贝要廉价很多）。
+
+定义一个移动构造函数和移动赋值近似于拷贝语义。不同的是拷贝获取的是 const 左值引用参数，移动获取的是非 const 右值引用参数。
+
+```cpp
+#include <iostream>
+
+template<typename T>
+class Auto_ptr4
+{
+  T* m_ptr;
+public:
+  Auto_ptr4(T* ptr = nullptr)
+    :m_ptr(ptr)
+  {
+  }
+
+  ~Auto_ptr4()
+  {
+    delete m_ptr;
+  }
+
+  // 拷贝构造函数
+  // 深拷贝 a.m_ptr 至 m_ptr
+  Auto_ptr4(const Auto_ptr4& a)
+  {
+    m_ptr = new T;
+    *m_ptr = *a.m_ptr;
+  }
+
+  // 移动构造函数
+  // 转移所有权 a.m_ptr 至 m_ptr
+  Auto_ptr4(Auto_ptr4&& a) noexcept
+    : m_ptr(a.m_ptr)
+  {
+    a.m_ptr = nullptr; // 接下来会讨论这行
+  }
+
+  // 拷贝赋值
+  // 深拷贝 a.m_ptr 至 m_ptr
+  Auto_ptr4& operator=(const Auto_ptr4& a)
+  {
+    // 自赋值检测
+    if (&a == this)
+      return *this;
+
+    // 释放任何持有的资源
+    delete m_ptr;
+
+    // 拷贝资源
+    m_ptr = new T;
+    *m_ptr = *a.m_ptr;
+
+    return *this;
+  }
+
+  // 移动赋值
+  // 转移所有权 a.m_ptr 至 m_ptr
+  Auto_ptr4& operator=(Auto_ptr4&& a) noexcept
+  {
+    // 自赋值检测
+    if (&a == this)
+      return *this;
+
+    // 释放任何持有的资源
+    delete m_ptr;
+
+    // 转移所有权 a.m_ptr 至 m_ptr
+    m_ptr = a.m_ptr;
+    a.m_ptr = nullptr; // 接下来会讨论这行
+
+    return *this;
+  }
+
+  T& operator*() const { return *m_ptr; }
+  T* operator->() const { return m_ptr; }
+  bool isNull() const { return m_ptr == nullptr; }
+};
+
+class Resource
+{
+public:
+  Resource() { std::cout << "Resource acquired\n"; }
+  ~Resource() { std::cout << "Resource destroyed\n"; }
+};
+
+Auto_ptr4<Resource> generateResource()
+{
+  Auto_ptr4<Resource> res{new Resource};
+  return res; // 该返回值将唤起移动构造函数
+}
+
+int main()
+{
+  Auto_ptr4<Resource> mainres;
+  mainres = generateResource(); // 该赋值将唤起移动赋值
+
+  return 0;
+}
+```
+
+移动构造函数与移动赋值操作符很简单。相比于深拷贝原始对象，仅需移动原始对象的资源。这里涉及到了浅拷贝原始指针至隐式对象，接着设置原始指针为空。
+
+打印：
+
+```txt
+Resource acquired
+Resource destroyed
+```
+
+这好多了！
+
+程序的工作流与之前完全相同。不同点在于不是调用拷贝构造函数与拷贝赋值操作符，这个程序调用的是移动构造函数与移动赋值操作符。深入了解细节：
+
+1. 在 `generateResource()` 中，本地变量 `res` 被创建并初始化了一个动态分配的 `Resource`，即“Resource acquired”发生。
+
+1. `res` 值返回给 `main()`，其由移动构造至临时对象，转移存储于 `res` 中动态创建的对象至临时对象。接下来会讲解为何会发生。
+
+1. `res` 离开作用域，由于其不再管理指针（因为被移动至临时对象了），无趣事发生。
+
+1. 临时对象移动赋值至 `mainres`。这里转移存储于临时对象中动态创建对象至 `mainres`。
+
+1. 赋值表达式结束，临时对象离开表达式作用域并被销毁。然而由于临时对象不再管理一个指针（因为被移动至 `mainers`），这里也没有趣事发生。
+
+1. 在 `main()` 结束时，`mainres` 离开作用域，即“Resource destroyed”发生。
+
+## 何时调用移动构造函数与移动赋值
+
+移动构造函数与移动赋值被定义后，只要构造函数的入参或赋值的是右值，它们就会被调用。最典型的右值就是字面值或临时值。
+
+大多数情况下，移动构造函数与移动赋值操作符不会由默认提供，除非是类没有提供任何的拷贝构造函数，拷贝赋值，移动赋值或析构函数。
+
+## 移动语义背后的重点
+
+如果参数是左值的情况下构造一个对象或者是赋值，能做的唯一事情就只有拷贝左值。我们不能假设改动左值是安全的，因为它有可能在之后的程序中继续被使用。如果有一个表达式“a = b”，我们不能合理的预期 b 在任何情况下被改变。
+
+然而如果参数是右值的情况下构造一个对象或者是赋值，可以知道右值是一种临时的对象。不同于拷贝它（即可以是很昂贵），可以简单的转移它的资源（廉价）给正在构造或者赋值的对象。这是安全的因为临时值会在表达式结束时销毁，因此可以知道它永远不会被使用！
+
+C++11 通过右值引用，在参数是右值时，提供了不同的行为，赋予了用户更聪明和更有效的决定对象行为决策的能力。
+
+## 移动函数应该总是让两个对象处于有效状态
+
+上述例子中，移动构造函数和移动赋值函数都设置了 `a.m_ptr` 为空指针。这似乎没有关联 -- 毕竟如果 `a` 是一个临时的右值，`a` 总是会被销毁的，那为什么还需要清理呢？
+
+答案非常的简单：当 `a` 离开作用域，它的析构函数会被调用，`a.m_ptr` 会被删除。如果这个时候 `a.m_ptr` 仍然指向了与 `m_ptr` 相同的对象时，`m_ptr` 将会变成悬垂指针。当对象包含 `m_ptr` 最终被使用（或者销毁），则带来未定义行为。
+
+当实现移动语义时，确保被移动的对象处于有效状态是非常重要的，因此才能合理的析构（不产生未定义行为）。
+
+## 自动左值的值返回有可能是移动而不是拷贝
+
+在 `Auto_ptr4` 例子的 `generateResource()` 函数中，当变量 `res` 被值返回，它是被移动的而不是拷贝，即使 `res` 是一个左值。C++ 规范中有一个特殊的规则就是从一个函数里值返回的自动对象可以被移动，即使它们是左值。这很合理，因为 `res` 怎样都会在函数结算时被销毁！同样也可以窃取其资源而不是使用昂贵且不必要的拷贝。
+
+尽管编译器可以移动左值返回值，一些情况下可能做的更好，即简单的省略所有的拷贝（也就是避免了所有的拷贝或移动）。这种情况下，拷贝构造函数或移动构造函数都不会被调用。
+
+## 禁用拷贝
+
+在 `Auto_ptr4` 类中，留下了拷贝构造函数与赋值操作符作为比较的目的。但是在可移动的类中，有时删除它们来确保不会有拷贝更为合适。
+
+```cpp
+#include <iostream>
+
+template<typename T>
+class Auto_ptr5
+{
+  T* m_ptr;
+public:
+  Auto_ptr5(T* ptr = nullptr)
+    :m_ptr(ptr)
+  {
+  }
+
+  ~Auto_ptr5()
+  {
+    delete m_ptr;
+  }
+
+  // 拷贝构造函数 -- 不允许拷贝！
+  Auto_ptr5(const Auto_ptr5& a) = delete;
+
+  // 移动构造函数
+  // 转移所有权 a.m_ptr 至 m_ptr
+  Auto_ptr5(Auto_ptr5&& a) noexcept
+    : m_ptr(a.m_ptr)
+  {
+    a.m_ptr = nullptr;
+  }
+
+  // 拷贝赋值 -- 不允许拷贝！
+  Auto_ptr5& operator=(const Auto_ptr5& a) = delete;
+
+  // 移动赋值
+  // 转移所有权 a.m_ptr 至 m_ptr
+  Auto_ptr5& operator=(Auto_ptr5&& a) noexcept
+  {
+    // 自赋值检测
+    if (&a == this)
+      return *this;
+
+    // 释放任何持有的资源
+    delete m_ptr;
+
+    // 转移所有权 a.m_ptr 至 m_ptr
+    m_ptr = a.m_ptr;
+    a.m_ptr = nullptr;
+
+    return *this;
+  }
+
+  T& operator*() const { return *m_ptr; }
+  T* operator->() const { return m_ptr; }
+  bool isNull() const { return m_ptr == nullptr; }
+};
+```
+
+`Auto_ptr5`（最终）是一个非常好的智能指针。实际上标准库包含了一个类似的类，其名为 `std::unique_ptr`（也是用户该使用的，下一节将会覆盖）。
+
+## 另一个例子
+
+现在来看另一个使用动态内存的例子：一个简单的动态模板数组。该类包含了一个深拷贝构造函数与拷贝赋值操作符。
+
+```cpp
+#include <iostream>
+
+template <typename T>
+class DynamicArray
+{
+private:
+  T* m_array;
+  int m_length;
+
+public:
+  DynamicArray(int length)
+    : m_array(new T[length]), m_length(length)
+  {
+  }
+
+  ~DynamicArray()
+  {
+    delete[] m_array;
+  }
+
+  // Copy constructor
+  DynamicArray(const DynamicArray &arr)
+    : m_length(arr.m_length)
+  {
+    m_array = new T[m_length];
+    for (int i = 0; i < m_length; ++i)
+      m_array[i] = arr.m_array[i];
+  }
+
+  // Copy assignment
+  DynamicArray& operator=(const DynamicArray &arr)
+  {
+    if (&arr == this)
+      return *this;
+
+    delete[] m_array;
+
+    m_length = arr.m_length;
+    m_array = new T[m_length];
+
+    for (int i = 0; i < m_length; ++i)
+      m_array[i] = arr.m_array[i];
+
+    return *this;
+  }
+
+  int getLength() const { return m_length; }
+  T& operator[](int index) { return m_array[index]; }
+  const T& operator[](int index) const { return m_array[index]; }
+
+};
+```
+
+接下来在程序中使用该类，展示该类在堆上分配一百万整型的数据时候的性能。最终可以看到拷贝与移动之间性能的差异。
+
+```cpp
+#include <iostream>
+#include <chrono> // std::chrono 函数
+
+// 使用上面的 DynamicArray 类
+
+class Timer
+{
+private:
+  // 类型别名
+  using Clock = std::chrono::high_resolution_clock;
+  using Second = std::chrono::duration<double, std::ratio<1> >;
+
+  std::chrono::time_point<Clock> m_beg { Clock::now() };
+
+public:
+  void reset()
+  {
+    m_beg = Clock::now();
+  }
+
+  double elapsed() const
+  {
+    return std::chrono::duration_cast<Second>(Clock::now() - m_beg).count();
+  }
+};
+
+// 返回 arr 的拷贝，其中所有元素乘以二
+DynamicArray<int> cloneArrayAndDouble(const DynamicArray<int> &arr)
+{
+  DynamicArray<int> dbl(arr.getLength());
+  for (int i = 0; i < arr.getLength(); ++i)
+    dbl[i] = arr[i] * 2;
+
+  return dbl;
+}
+
+int main()
+{
+  Timer t;
+
+  DynamicArray<int> arr(1000000);
+
+  for (int i = 0; i < arr.getLength(); i++)
+    arr[i] = i;
+
+  arr = cloneArrayAndDouble(arr);
+
+  std::cout << t.elapsed();
+}
+```
+
+作者的电脑花费 0.00825559 秒。
+
+现在来看一下使用移动构造函数与移动赋值版本的例子。
+
+```cpp
+template <typename T>
+class DynamicArray
+{
+private:
+  T* m_array;
+  int m_length;
+
+public:
+  DynamicArray(int length)
+    : m_array(new T[length]), m_length(length)
+  {
+  }
+
+  ~DynamicArray()
+  {
+    delete[] m_array;
+  }
+
+  // Copy constructor
+  DynamicArray(const DynamicArray &arr) = delete;
+
+  // Copy assignment
+  DynamicArray& operator=(const DynamicArray &arr) = delete;
+
+  // Move constructor
+  DynamicArray(DynamicArray &&arr) noexcept
+    :  m_array(arr.m_array), m_length(arr.m_length)
+  {
+    arr.m_length = 0;
+    arr.m_array = nullptr;
+  }
+
+  // Move assignment
+  DynamicArray& operator=(DynamicArray &&arr) noexcept
+  {
+    if (&arr == this)
+      return *this;
+
+    delete[] m_array;
+
+    m_length = arr.m_length;
+    m_array = arr.m_array;
+    arr.m_length = 0;
+    arr.m_array = nullptr;
+
+    return *this;
+  }
+
+  int getLength() const { return m_length; }
+  T& operator[](int index) { return m_array[index]; }
+  const T& operator[](int index) const { return m_array[index]; }
+
+};
+
+#include <iostream>
+#include <chrono> // std::chrono 函数
+
+class Timer
+{
+private:
+  using Clock = std::chrono::high_resolution_clock;
+  using Second = std::chrono::duration<double, std::ratio<1> >;
+
+  std::chrono::time_point<Clock> m_beg { Clock::now() };
+
+  public:
+  void reset()
+  {
+    m_beg = Clock::now();
+  }
+
+  double elapsed() const
+  {
+    return std::chrono::duration_cast<Second>(Clock::now() - m_beg).count();
+  }
+};
+
+DynamicArray<int> cloneArrayAndDouble(const DynamicArray<int> &arr)
+{
+  DynamicArray<int> dbl(arr.getLength());
+  for (int i = 0; i < arr.getLength(); ++i)
+    dbl[i] = arr[i] * 2;
+
+  return dbl;
+}
+
+int main()
+{
+  Timer t;
+
+  DynamicArray<int> arr(1000000);
+
+  for (int i = 0; i < arr.getLength(); i++)
+    arr[i] = i;
+
+  arr = cloneArrayAndDouble(arr);
+
+  std::cout << t.elapsed();
+}
+```
+
+作者的电脑花费 0.0056 秒。也就是说移动语义版本快了 47.4% 之多！
+
+## 不要通过 std::swap 来实现移动语义
+
+由于移动语义的目标是从一个原始对象移动资源到目标对象上，有人就会想着用 `std::swap` 来实现移动构造函数与移动赋值操作符。然而这是一个坏主意，因为 `std::swap` 调用了双方的移动构造函数与移动赋值在可移动的对象上，这便会造成无限递归。以下例子：
+
+```cpp
+#include <iostream>
+#include <string>
+
+class Name
+{
+private:
+  std::string m_name; // std::string 是可移动的
+
+public:
+  Name(std::string name) : m_name{ name }
+  {
+  }
+
+  Name(Name& name) = delete;
+  Name& operator=(Name& name) = delete;
+
+  Name(Name&& name)
+  {
+      std::cout << "Move ctor\n";
+
+      std::swap(*this, name); // 坏！
+  }
+
+  Name& operator=(Name&& name)
+  {
+      std::cout << "Move assign\n";
+
+      std::swap(*this, name); // 坏！
+
+      return *this;
+  }
+
+  const std::string& get() { return m_name; }
+};
+
+int main()
+{
+  Name n1{ "Alex" };
+  n1 = Name{"Joe"}; // 唤起移动赋值
+
+  std::cout << n1.get() << '\n';
+
+  return 0;
+}
+```
+
+打印：
+
+```txt
+Move assign
+Move ctor
+Move ctor
+Move ctor
+Move ctor
+...
+```
+
+无限循环直到栈溢出。
+
+可以使用自定义的交换函数，只要自定义的交换成员函数不去调用移动构造函数或移动赋值。例如：
+
+```cpp
+#include <iostream>
+#include <string>
+
+class Name
+{
+private:
+  std::string m_name;
+
+public:
+  Name(std::string name) : m_name{ name }
+  {
+  }
+
+  Name(Name& name) = delete;
+  Name& operator=(Name& name) = delete;
+
+  // 创建自定义的友元 swap 函数用于交换成员 Name
+  friend void swap(Name& a, Name& b) noexcept
+  {
+      // 避免在 std::string 成员上递归调用 std::swap
+      std::swap(a.m_name, b.m_name);
+  }
+
+  Name(Name&& name)
+  {
+      std::cout << "Move ctor\n";
+
+      swap(*this, name); // 调用自身的 swap，而不是 std::swap
+  }
+
+  Name& operator=(Name&& name)
+  {
+      std::cout << "Move assign\n";
+
+      swap(*this, name); // 调用自身的 swap，而不是 std::swap
+
+      return *this;
+  }
+};
+
+int main()
+{
+  Name n1{ "Alex" };
+  n1 = Name{"Joe"}; // 唤起移动赋值
+
+  std::cout << n1.get() << '\n';
+
+  return 0;
+}
+```
+
+与预期一致，打印：
+
+```txt
+Move assign
+Joe
+```
