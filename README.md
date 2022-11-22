@@ -52,7 +52,9 @@ A personal C-plus-plus study note.
 
 1. [template_quiz](./learn-cpp-codes/template_quiz/main.cpp)
 
-1. [exception](./learn-cpp-codes/exception/main.cpp): customized exception (class/enum class)
+1. [exception](./learn-cpp-codes/exception/main.cpp): customized exception (class/enum class) & exception inheritance (`std::exception`/`std::runtime_error`)
+
+1. [move_cst_asg](./learn-cpp-codes/move_cst_asg/main.cpp): move semantics constructors & assignment, and a comparison between copy and move
 
 ## Vscode settings
 
