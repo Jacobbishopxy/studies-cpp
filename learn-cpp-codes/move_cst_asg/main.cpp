@@ -49,7 +49,9 @@ int main(int argc, char const* argv[])
 
     arr1 = cloneArrayAndDouble(arr1);
 
-    std::cout << "Copy semantics time consumed: " << t.elapsed() << std::endl;
+    const double t1 = t.elapsed();
+
+    std::cout << "Copy semantics time consumed: " << t1 << std::endl;
 
     t.reset();
 
@@ -60,7 +62,11 @@ int main(int argc, char const* argv[])
 
     arr2 = cloneArrayAndDouble(arr2);
 
-    std::cout << "Move semantics time consumed: " << t.elapsed() << std::endl;
+    const double t2 = t.elapsed();
+
+    std::cout << "Move semantics time consumed: " << t2 << std::endl;
+
+    std::cout << "t2/t1 = " << t2 / t1 << std::endl;
 
     return 0;
 }
