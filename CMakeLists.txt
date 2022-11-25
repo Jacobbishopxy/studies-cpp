@@ -22,6 +22,7 @@ add_executable(association learn-cpp-codes/association/main.cpp)
 add_executable(virtual_covariant_rtn learn-cpp-codes/virtual_covariant_rtn/main.cpp)
 add_executable(move_cst_asg learn-cpp-codes/move_cst_asg/main.cpp)
 add_executable(stl_traits learn-cpp-codes/stl_traits/main.cpp)
+add_executable(crtp learn-cpp-codes/crtp/main.cpp)
 
 install(
   TARGETS
@@ -42,6 +43,7 @@ install(
   virtual_covariant_rtn
   move_cst_asg
   stl_traits
+  crtp
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
   

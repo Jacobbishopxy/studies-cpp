@@ -58,6 +58,8 @@ A personal C-plus-plus study note.
 
 1. [stl_traits](./learn-cpp-codes/stl_traits/README.md): STL `iterator_traits` mock code
 
+1. [crtp](./learn-cpp-codes/crtp/main.cpp): CRTP common usages
+
 ## Vscode settings
 
 - C++ format in `settings.json`:
