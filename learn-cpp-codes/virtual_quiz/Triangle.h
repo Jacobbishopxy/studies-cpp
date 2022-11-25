@@ -5,15 +5,20 @@
 #include "Shape.h"
 
 class Triangle : public Shape {
- private:
-  Point m_x;
-  Point m_y;
-  Point m_z;
+private:
+    Point m_x;
+    Point m_y;
+    Point m_z;
 
- public:
-  Triangle(Point x, Point y, Point z) : m_x{x}, m_y{y}, m_z{z} {}
+public:
+    Triangle(Point x, Point y, Point z)
+        : m_x { x }
+        , m_y { y }
+        , m_z { z }
+    {
+    }
 
-  std::ostream& print(std::ostream& out) const override;
+    std::ostream& print(std::ostream& out) const override;
 };
 
-#endif  // TRIANGLE_H
+#endif // TRIANGLE_H

@@ -510,7 +510,7 @@ private:
 
   std::chrono::time_point<Clock> m_beg { Clock::now() };
 
-  public:
+public:
   void reset()
   {
     m_beg = Clock::now();

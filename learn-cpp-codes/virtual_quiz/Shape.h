@@ -4,14 +4,15 @@
 #include <iostream>
 
 class Shape {
- public:
-  friend std::ostream& operator<<(std::ostream& out, const Shape& s) {
-    return s.print(out);
-  }
+public:
+    friend std::ostream& operator<<(std::ostream& out, const Shape& s)
+    {
+        return s.print(out);
+    }
 
-  virtual std::ostream& print(std::ostream& out) const = 0;
+    virtual std::ostream& print(std::ostream& out) const = 0;
 
-  virtual ~Shape() = default;
+    virtual ~Shape() = default;
 };
 
-#endif  // SHAPE_H
+#endif // SHAPE_H
