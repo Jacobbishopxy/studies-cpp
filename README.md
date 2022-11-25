@@ -56,6 +56,8 @@ A personal C-plus-plus study note.
 
 1. [move_cst_asg](./learn-cpp-codes/move_cst_asg/main.cpp): move semantics constructors & assignment, and a comparison between copy and move
 
+1. [stl_traits](./learn-cpp-codes/stl_traits/README.md): STL `iterator_traits` mock code
+
 ## Vscode settings
 
 - C++ format in `settings.json`:
