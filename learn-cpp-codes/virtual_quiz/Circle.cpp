@@ -2,7 +2,8 @@
 
 #include <iostream>
 
-std::ostream& Circle::print(std::ostream& out) const {
+std::ostream& Circle::print(std::ostream& out) const
+{
   out << "Circle(" << this->m_centre << ", radius " << m_radius << ")";
   return out;
 }

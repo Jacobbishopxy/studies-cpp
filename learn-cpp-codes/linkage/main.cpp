@@ -1,6 +1,6 @@
 
-#include "animal_i.h"
 #include "animal_e.h"
+#include "animal_i.h"
 
 #include <stdio.h>
 

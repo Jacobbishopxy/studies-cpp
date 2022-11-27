@@ -3,7 +3,8 @@
 
 #include <iostream>
 
-std::ostream& Shape::print(std::ostream& out) const {
+std::ostream& Shape::print(std::ostream& out) const
+{
   out << "Base";
   return out;
 }

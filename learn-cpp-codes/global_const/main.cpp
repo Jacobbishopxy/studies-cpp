@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-int main(int argc, char const *argv[])
+int main(int argc, char const* argv[])
 {
 
   std::cout << "Enter a radius: ";

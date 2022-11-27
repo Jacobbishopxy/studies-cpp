@@ -3,7 +3,8 @@
 #include "car_driver.h"
 #include "doctor_patient.h"
 
-void doctor_patient() {
+void doctor_patient()
+{
   Patient dave{"Dave"};
   Patient frank{"Frank"};
   Patient betsy{"Betsy"};
@@ -23,7 +24,8 @@ void doctor_patient() {
   std::cout << betsy << std::endl;
 }
 
-void car_driver() {
+void car_driver()
+{
   Driver d{"Franz", 17};
 
   Car* car{CarLot::getCar(d.getCarId())};
@@ -34,7 +36,8 @@ void car_driver() {
     std::cout << d.getName() << " couldn't find his car" << std::endl;
 }
 
-int main() {
+int main()
+{
   doctor_patient();
 
   car_driver();

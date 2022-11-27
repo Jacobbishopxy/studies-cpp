@@ -3,14 +3,16 @@
 #include <iostream>
 #include <string>
 
-int main() {
+int main()
+{
 
   std::cout << "Enter a name for your creature: ";
   std::string name;
   std::cin >> name;
   Creature creature{name, {4, 7}};
 
-  while (true) {
+  while (true)
+  {
     std::cout << creature << std::endl;
 
     std::cout << "Enter new X location for create (-1 to quit): ";

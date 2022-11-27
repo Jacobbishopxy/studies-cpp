@@ -33,22 +33,26 @@ int main(int argc, char const* argv[]) {
 #include <utility>
 #include <vector>
 
-struct Sum {
+struct Sum
+{
   void operator()(int n) { sum += n; }
   int sum{0};
 };
 
-int main() {
+int main()
+{
   std::vector<int> nums{3, 4, 2, 8, 15, 267};
 
-  auto print = [](const auto& n) { std::cout << ' ' << n; };
+  auto print = [](const auto& n)
+  { std::cout << ' ' << n; };
 
   namespace ranges = std::ranges;
   std::cout << "before:";
   ranges::for_each(std::as_const(nums), print);
   print('\n');
 
-  ranges::for_each(nums, [](int& n) { ++n; });
+  ranges::for_each(nums, [](int& n)
+                   { ++n; });
 
   // calls Sum::operator() for each number
   auto [i, s] = ranges::for_each(nums.begin(), nums.end(), Sum());
@@ -65,7 +69,8 @@ int main() {
   std::vector<pair> pairs{{1, "one"}, {2, "two"}, {3, "tree"}};
 
   std::cout << "project the pair::first: ";
-  ranges::for_each(pairs, print, [](const pair& p) { return p.first; });
+  ranges::for_each(pairs, print, [](const pair& p)
+                   { return p.first; });
 
   std::cout << "\n"
                "project the pair::second:";

@@ -6,11 +6,14 @@
 #include "Point.h"
 #include "Triangle.h"
 
-int getLargestRadius(const std::vector<Shape*>& v) {
+int getLargestRadius(const std::vector<Shape*>& v)
+{
   int lr{0};
 
-  for (const auto* s : v) {
-    if (auto* c{dynamic_cast<const Circle*>(s)}) {
+  for (const auto* s : v)
+  {
+    if (auto* c{dynamic_cast<const Circle*>(s)})
+    {
       lr = std::max(lr, c->getRadius());
     }
   }
@@ -18,7 +21,8 @@ int getLargestRadius(const std::vector<Shape*>& v) {
   return lr;
 }
 
-int main(int argc, char const* argv[]) {
+int main(int argc, char const* argv[])
+{
   // question #1
   {
     Circle c{Point{1, 2}, 7};
@@ -35,14 +39,16 @@ int main(int argc, char const* argv[]) {
                           new Circle{Point{7, 8}, 3}};
 
     // print each shape in vector v on its own line here
-    for (const auto* s : v) {
+    for (const auto* s : v)
+    {
       std::cout << *s << std::endl;
     }
 
     std::cout << "The largest radius is: " << getLargestRadius(v) << std::endl;
 
     // delete each element in the vector here
-    for (const auto* s : v) {
+    for (const auto* s : v)
+    {
       delete s;
     }
   }

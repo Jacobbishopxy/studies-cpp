@@ -5,12 +5,13 @@
  * - Trivial Constructors & Destructors should be declared in .h file.
  * - Accessors functions (getters & setters are trivial) should be declared in .h file.
  */
-class DateProClass {
+class DateProClass
+{
   int m_month;
   int m_day;
   int m_year;
 
-public:
+  public:
   // prefer initializer list
   DateProClass(int m, int d, int y) : m_month{m}, m_day{d}, m_year{y} {}
 

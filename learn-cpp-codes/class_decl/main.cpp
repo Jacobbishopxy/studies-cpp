@@ -5,13 +5,15 @@
 /**
  * Non-reusable class should be declared in its usage file.
  */
-class DateClass {
+class DateClass
+{
   int month;
   int day;
   int year;
 
-public:
-  void setDate(int m, int d, int y) {
+  public:
+  void setDate(int m, int d, int y)
+  {
     month = m;
     day = d;
     year = y;
@@ -19,7 +21,8 @@ public:
 
   void print() { std::cout << month << '/' << day << '/' << year << std::endl; }
 
-  void copyFrom(const DateClass& d) {
+  void copyFrom(const DateClass& d)
+  {
     // same-class object's member is accessible
     // works like Rust's `pub(crate)` announcement, but totally different mechanism
     month = d.month;
@@ -28,7 +31,8 @@ public:
   }
 };
 
-int main(int argc, char const* argv[]) {
+int main(int argc, char const* argv[])
+{
   DateClass d;
   d.setDate(12, 23, 1989);
 

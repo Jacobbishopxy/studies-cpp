@@ -6,13 +6,14 @@
 // 前向声明
 class Vector3d;
 
-class Point3d {
-private:
+class Point3d
+{
+  private:
   double m_x{};
   double m_y{};
   double m_z{};
 
-public:
+  public:
   Point3d(double x = 0.0, double y = 0.0, double z = 0.0);
 
   void print() const;

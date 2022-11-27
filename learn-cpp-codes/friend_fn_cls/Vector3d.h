@@ -3,13 +3,14 @@
 
 #include "Point3d.h" // 使用 Point3d::moveByVector() 作为友元
 
-class Vector3d {
-private:
+class Vector3d
+{
+  private:
   double m_x{};
   double m_y{};
   double m_z{};
 
-public:
+  public:
   Vector3d(double x = 0.0, double y = 0.0, double z = 0.0);
 
   void print() const;

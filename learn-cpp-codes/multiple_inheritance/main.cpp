@@ -1,7 +1,8 @@
 #include "box_label_button.h"
 #include "person_employee_teacher.h"
 
-int main(int argc, char const* argv[]) {
+int main(int argc, char const* argv[])
+{
   Teacher t{"Mary", 45, "Boo", 14.3, 8};
 
   Button button{};
