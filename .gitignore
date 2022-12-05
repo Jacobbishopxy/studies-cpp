@@ -35,3 +35,6 @@
 /build
 main.dSYM
 main
+
+out/
+*.log
