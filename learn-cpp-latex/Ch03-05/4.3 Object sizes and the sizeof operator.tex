@@ -1,0 +1,87 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{3}{Object sizes and the sizeof operator}
+
+\subsubsection*{对象大小}
+
+现代机器的内存通常由成字节大小的单位构成，每个字节的内存都有位移的地址。
+
+\subsubsection*{基本数据类型大小}
+
+\begin{center}
+    \begin{tiny}
+        \begin{tabularx}{ 1\textwidth}{
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X |
+            }
+            \hline
+            Category                          & Type        & Minimum Size & Note                  \\
+            \hline
+            boolean                           & bool        & 1 byte       &                       \\
+            \hline
+            \multirow{4}{5em}{character}      & char        & 1 byte       & Always exactly 1 byte \\
+                                              & wchar\_t    & 1 byte       &                       \\
+                                              & char16\_t   & 2 bytes      &                       \\
+                                              & char32\_t   & 4 bytes      &                       \\
+            \hline
+            \multirow{4}{5em}{integer}        & short       & 2 bytes      &                       \\
+                                              & int         & 2 bytes      &                       \\
+                                              & long        & 4 bytes      &                       \\
+                                              & long long   & 8 bytes      &                       \\
+            \hline
+            \multirow{3}{8em}{floating point} & float       & 4 bytes      &                       \\
+                                              & double      & 4 bytes      &                       \\
+                                              & long double & 8 bytes      &                       \\
+            \hline
+        \end{tabularx}
+    \end{tiny}
+\end{center}
+
+\subsubsection*{sizeof 操作符}
+
+\textbf{sizeof} 操作符是一个一元操作符，其入参为一个类型或者变量，其返回值则是字节大小。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    std::cout << "bool:\t\t" << sizeof(bool) << " bytes\n";
+    std::cout << "char:\t\t" << sizeof(char) << " bytes\n";
+    std::cout << "wchar_t:\t" << sizeof(wchar_t) << " bytes\n";
+    std::cout << "char16_t:\t" << sizeof(char16_t) << " bytes\n";
+    std::cout << "char32_t:\t" << sizeof(char32_t) << " bytes\n";
+    std::cout << "short:\t\t" << sizeof(short) << " bytes\n";
+    std::cout << "int:\t\t" << sizeof(int) << " bytes\n";
+    std::cout << "long:\t\t" << sizeof(long) << " bytes\n";
+    std::cout << "long long:\t" << sizeof(long long) << " bytes\n";
+    std::cout << "float:\t\t" << sizeof(float) << " bytes\n";
+    std::cout << "double:\t\t" << sizeof(double) << " bytes\n";
+    std::cout << "long double:\t" << sizeof(long double) << " bytes\n";
+
+    return 0;
+}
+\end{lstlisting}
+
+打印结果：
+
+\begin{verbatim}
+    bool:           1 bytes
+    char:           1 bytes
+    wchar_t:        2 bytes
+    char16_t:       2 bytes
+    char32_t:       4 bytes
+    short:          2 bytes
+    int:            4 bytes
+    long:           4 bytes
+    long long:      8 bytes
+    float:          4 bytes
+    double:         8 bytes
+    long double:    8 bytes
+\end{verbatim}
+
+\end{document}

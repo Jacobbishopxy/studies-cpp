@@ -1,12 +1,15 @@
 \PassOptionsToPackage{quiet}{fontspec}
 \documentclass[UTF8]{ctexart}
 
+\usepackage[a4paper, total={6in, 8in}]{geometry}
 \usepackage{lmodern}
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{amsfonts}
 \usepackage{hyperref}
+\usepackage{tabularx}
+\usepackage{multirow}
 
 \graphicspath{\subfix{./images/}}
 
@@ -44,7 +47,7 @@
 
 \maketitle
 
-\section{Introduction}
+\section{C++ Basics}
 
 \subfile{Ch01/1.1 Statements and the structure of a program}
 \subfile{Ch01/1.3 Introduction to objects and variables}
@@ -53,7 +56,7 @@
 
 \newpage
 
-\section{C++ Basics}
+\section{Functions and Files}
 
 \subfile{Ch02/2.1 Introduction to functions}
 \subfile{Ch02/2.7 Forward declarations and definitions}
@@ -65,10 +68,98 @@
 
 \newpage
 
-\section{Functions and Files}
+\section{Debugging C++ Programs}
 
-% \subfile{Ch03/}
-% \subfile{Ch03/}
-% \subfile{Ch03/}
+\subfile{Ch03-05/3.2 The debugging process}
+
+\newpage
+
+\section{Fundamental Data Types}
+
+\subfile{Ch03-05/4.1 Introduction to fundamental data types}
+\subfile{Ch03-05/4.3 Object sizes and the sizeof operator}
+\subfile{Ch03-05/4.14 Compile-time constants, constant expressions, and constexpr}
+
+\newpage
+
+\section{Operators}
+
+\subfile{Ch03-05/5.1 Operator precedence and associativity}
+
+\newpage
+
+\section{Scope, Duration, and Linkage}
+
+\newpage
+
+\section{Control Flow and Error Handling}
+
+\newpage
+
+\section{Type Conversion and Function Overloading}
+
+\newpage
+
+\section{Compound Types: References and Pointers}
+
+\newpage
+
+\section{Compound Types: Enums and Structs}
+
+\newpage
+
+\section{Arrays, Strings, and Dynamic Allocation}
+
+\newpage
+
+\section{Functions}
+
+\newpage
+
+\section{Basic Object-oriented Programming}
+
+\newpage
+
+\section{Operator overloading}
+
+\newpage
+
+\section{An Introduction to Object Relationships}
+
+\newpage
+
+\section{Inheritance}
+
+\newpage
+
+\section{Virtual Functions}
+
+\newpage
+
+\section{Templates and Classes}
+
+\newpage
+
+\section{Exceptions}
+
+\newpage
+
+\section{Move Semantics and Smart Pointers}
+
+\newpage
+
+\section{The Standard Template Library}
+
+\newpage
+
+\section{std::string}
+
+\newpage
+
+\section{Input and Output (I/O)}
+
+\newpage
+
+\section{Miscellaneous Subjects}
 
 \end{document}
