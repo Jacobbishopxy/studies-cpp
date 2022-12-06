@@ -1,0 +1,183 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{14}{Constexpr and consteval functions}
+
+\subsubsection*{Constexpr 函数可以在编译期被计算}
+
+一个\textbf{constexpr} 函数其返回值可能在编译期被计算。
+只需要在函数的返回值前加上 \acode{constexpr} 关键字就可以使一个函数成为 constexpr 函数。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+constexpr int greater(int x, int y) // constexpr 函数
+{
+    return (x > y ? x : y);
+}
+
+int main()
+{
+    constexpr int x{ 5 };
+    constexpr int y{ 6 };
+
+    // 稍后会解释这里为何使用变量 g
+    constexpr int g { greater(x, y) }; // 将在编译期被计算
+
+    std::cout << g << " is greater!\n";
+
+    return 0;
+}
+\end{lstlisting}
+
+具备编译期计算的能力，一个函数必须拥有一个 constexpr 的返回类型同时不调用任何非 constexpr 函数。
+除此之外，调用函数者必须是 constexpr 参数（例如 constexpr 变量或者字面值）。
+
+\subsubsection*{Constexpr 函数是隐式内联的}
+
+因为 constexpr 函数有可能在编译期被计算，在其被调用处，编译器必须知道其所有的定义。
+
+这就意味着在若干文件中调用的 constexpr 函数需要其定义也被引用至各个文件中 -- 这通常违反了单定义规则。为了避免这种情况，constexpr 函数是隐式内联的，使得它们从单独定义规则中豁免。
+
+结果就是 constexpr 函数通常定义在头文件中，这样他们可以被 \#include 到任何需求全定义的 .cpp 文件中。
+
+\subsubsection*{Constexpr 函数同样也可以在运行时被计算}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+constexpr int greater(int x, int y)
+{
+    return (x > y ? x : y);
+}
+
+int main()
+{
+    int x{ 5 }; // 非 constexpr
+    int y{ 6 }; // 非 constexpr
+
+    std::cout << greater(x, y) << " is greater!\n"; // 将在运行时被计算
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{Constexpr 函数什么时候会在编译期执行？}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+constexpr int greater(int x, int y)
+{
+    return (x > y ? x : y);
+}
+
+int main()
+{
+    constexpr int g { greater(5, 6) };              // case 1: 编译期计算
+    std::cout << g << " is greater!\n";
+
+    int x{ 5 }; // 非 constexpr
+    std::cout << greater(x, 6) << " is greater!\n"; // case 2: 运行时计算
+
+    std::cout << greater(5, 6) << " is greater!\n"; // case 3: 有可能是编译期计算，也有可能是运行时计算，根据编译器优化等级决定
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{判断 constexpr 函数是编译期计算还是运行时计算}
+
+C++20 之前是没有合适的标准语言工具的。
+
+在 C++20 中，\acode{std::is\_constant\_evaluated()}（定义在 <type\_traits> 头文件中）返回一个 \acode{bool} 表示当前函数调用是否执行在常数上下文中。
+这可以与条件声明结合起来，使一个函数的行为根据编译期或运行时做出不同的行为。
+
+\begin{lstlisting}[language=C++]
+#include <type_traits> // 内含 std::is_constant_evaluated
+
+constexpr int someFunction()
+{
+    if (std::is_constant_evaluated()) // 如果是编译期计算
+        // 做什么
+    else // 运行时计算
+        // 做其他
+}
+\end{lstlisting}
+
+\subsubsection*{Consteval C++20}
+
+C++20 引入关键字 \textbf{consteval}，用以表示一个函数\textit{必须}在编译时计算，否则会返回编译错误。
+这种函数被称为 \textbf{immediate functions}。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+consteval int greater(int x, int y) // 函数为 consteval
+{
+    return (x > y ? x : y);
+}
+
+int main()
+{
+    constexpr int g { greater(5, 6) };              // ok: 编译期计算
+    std::cout << greater(5, 6) << " is greater!\n"; // ok: 编译期计算
+
+    int x{ 5 }; // 非 constexpr
+    std::cout << greater(x, 6) << " is greater!\n"; // error: consteval 函数必须在编译期计算
+
+    return 0;
+}
+\end{lstlisting}
+
+最佳实践：如果因为某种原因（例如性能）函数必须在编译期执行，请使用 \textbf{consteval}。
+
+\subsubsection*{使用 consteval 使 constexpr 在编译期执行 C++20}
+
+consteval 这类函数的缺点就是不能在运行时计算，使得它们相较于 constexpr 函数少了一些灵活性。
+因此，拥有一个方便的方法迫使 constexpr 函数在编译期计算（即使其返回值被用在不需要的常数表达式中），
+那么可以尽可能的编译期计算，并且不可能时运行时计算。
+
+consteval 函数提供了一种方式使其成为可能，使用一个干净的帮助函数：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+// 使用 abbreviated 函数模版 (C++20) 以及 `auto` 返回值使得该函数可以对任何类型值生效
+consteval auto compileTime(auto value)
+{
+    return value;
+}
+
+constexpr int greater(int x, int y) // 函数为 constexpr
+{
+    return (x > y ? x : y);
+}
+
+int main()
+{
+    std::cout << greater(5, 6) << '\n';              // 编译期可能执行
+    std::cout << compileTime(greater(5, 6)) << '\n'; // 编译期执行
+
+    int x { 5 };
+    std::cout << greater(x, 6) << '\n';              // 仍然可以在运行时调用 constexpr 版本
+
+    return 0;
+}
+\end{lstlisting}
+
+上述之所以行得通是因为 constexpr 函数需要常数表达式作为入参 --
+因此如果我们使用 constexpr 函数的返回值作为 consteval 函数的入参，constexpr 函数就必须在编译期执行了！
+
+注意 consteval 函数返回的是值，而这可能在运行时效率不高（如果值是一些拷贝起来很昂贵的类型，例如 std::string），
+在编译期的上下文中倒是无所谓因为 consteval 函数的整个调用过程最终会由计算后的返回值替换掉。
+
+相关内容：
+
+\begin{itemize}
+    \item 章节 8.8 中讲解 \acode{auto}。
+    \item 章节 8.15 中讲解 abbreviated 函数模版（\acode{auto} 参数）。
+\end{itemize}
+
+\end{document}
