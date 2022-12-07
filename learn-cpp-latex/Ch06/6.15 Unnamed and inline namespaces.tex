@@ -29,7 +29,7 @@ int main()
 }
 \end{lstlisting}
 
-在 \acode{unnamed namespace} 里所有声明的内容被视为其父命名空间的一部分。
+在 \acode{unnamed namespace} 中的所有声明的内容被视为其父命名空间的一部分。
 因此即使 \acode{doSomething} 函数定义在 \acode{unnamed namespace} 中，
 函数本身是可以在父命名空间中方芬（在本案例中即 \acode{global namespace}），
 这也是为何可以在 \acode{main} 里调用 \acode{doSomething} 而不需要任何限定符。
