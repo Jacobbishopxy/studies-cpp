@@ -1,0 +1,110 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{15}{Function templates with multiple template types}
+
+\subsubsection*{使用 static\_cast 转换参数来匹配类型}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+template <typename T>
+T max(T x, T y)
+{
+    return (x > y) ? x : y;
+}
+
+int main()
+{
+    std::cout << max(static_cast<double>(2), 3.5) << '\n'; // 转换 int 至 double 用以调用 max(double, double)
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{提供实际类型}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+template <typename T>
+T max(T x, T y)
+{
+    return (x > y) ? x : y;
+}
+
+int main()
+{
+    std::cout << max<double>(2, 3.5) << '\n'; // 提供了实际类型 double，编译器不再使用模版类型推导
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{带有若干模版类型参数的函数模版}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+template <typename T, typename U> // 使用两个模版类型参数 T 和 U
+T max(T x, U y) // x 为 T 类型， y 为 U 类型
+{
+    return (x > y) ? x : y; // 这里出现了缩窄变化的问题
+}
+
+int main()
+{
+    std::cout << max(2, 3.5) << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+template <typename T, typename U>
+auto max(T x, U y)
+{
+    return (x > y) ? x : y;
+}
+
+int main()
+{
+    std::cout << max(2, 3.5) << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{简化函数模版 C++20}
+
+C++20 引入关键字 \acode{auto} 新用法：当 \acode{auto} 关键字用于普通函数的参数类型，
+编译器会自动转换函数成为函数模版，其 auto 参数变为独立模版类型参数。
+这个方法创建的函数模版被称为**\textbf{简化函数模版}**。
+
+例如，在 C++20 中简写：
+
+\begin{lstlisting}[language=C++]
+auto max(auto x, auto y)
+{
+    return (x > y) ? x : y;
+}
+\end{lstlisting}
+
+代替之间的：
+
+\begin{lstlisting}[language=C++]
+template <typename T, typename U>
+auto max(T x, U y)
+{
+    return (x > y) ? x : y;
+}
+\end{lstlisting}
+
+如果想要每个模版类型参数作为独立类型，推荐这种去除模版参数声明的形式，使得代码更简洁已读。
+
+最佳实践：如果每个 auto 参数都需要独立的模版类型时，请使用简写函数模版（在语言标准设为 C++20 或更新的情况下）。
+
+\end{document}

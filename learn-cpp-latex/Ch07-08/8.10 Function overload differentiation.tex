@@ -1,0 +1,84 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{10}{Function overload differentiation}
+
+\subsubsection*{重载还是是如何区分的}
+
+\begin{center}
+    \begin{tiny}
+        \begin{tabularx}{ 1\textwidth}{
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X |
+            }
+            \hline
+            Function property    & Used for differentiation & Notes                                                                                        \\
+            \hline
+            Number of parameters & Yes                      &                                                                                              \\
+            Type of parameters   & Yes                      & Excludes typedefs, type aliases, and const qualifier on value parameters. Includes ellipses. \\
+            Return type          & No                       &                                                                                              \\
+            \hline
+        \end{tabularx}
+    \end{tiny}
+\end{center}
+
+对于成员函数，额外的函数等级限定符也会被考虑到：
+
+\begin{center}
+    \begin{tiny}
+        \begin{tabularx}{ 1\textwidth}{
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X |
+            }
+            \hline
+            Function-level qualifier & Used for overloading \\
+            \hline
+            const or volatile        & Yes                  \\
+            Ref-qualifiers           & Yes                  \\
+            \hline
+        \end{tabularx}
+    \end{tiny}
+\end{center}
+
+\subsubsection*{根据入参数的重载}
+
+\begin{lstlisting}[language=C++]
+int add(int x, int y)
+{
+    return x + y;
+}
+
+int add(int x, int y, int z)
+{
+    return x + y + z;
+}
+\end{lstlisting}
+
+\subsubsection*{根据参数类型的重载}
+
+\begin{lstlisting}[language=C++]
+int add(int x, int y); // 整数
+double add(double x, double y); // 浮点
+double add(int x, double y); // 混合
+double add(double x, int y); // 混合
+\end{lstlisting}
+
+暂时还没有覆盖到省略号的内容，但是省略号参数被视为唯一类型的参数：
+
+\begin{lstlisting}[language=C++]
+void foo(int x, int y);
+void foo(int x, ...); // 与 foo(int, int) 不同
+\end{lstlisting}
+
+\subsubsection*{函数返回值类型的不同不被认为是有区分}
+
+\begin{lstlisting}[language=C++]
+int getRandomValue();
+double getRandomValue();
+\end{lstlisting}
+
+上述会导致编译器报错。
+
+\end{document}
