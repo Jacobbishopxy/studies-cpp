@@ -1,0 +1,185 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{3}{lvalue references}
+
+C++ 中\textbf{引用} references 是已有对象的别称。
+一旦一个引用被定义了，任何应用于引用的操作则会应用到被引用的对象其本身。
+
+这就意味着用户可以使用引用来读取或者修改被引用的对象。
+尽管引用刚开始看起来有点笨拙无用或者多余的，引用却在 C++ 中的任何地方都有用到。
+
+也可以对函数创建引用，尽管这不常见。
+
+现代 C++ 包含两种类型的引用：\acode{lvalue references} 以及 \acode{rvalue references}。本章讲解前者。
+
+相关内容：Rvalue references 则会在 \acode{move semantics} 章节中讲到。
+
+\subsubsection*{左值引用类型}
+
+\textbf{lvalue} 引用（通常称为 \textbf{引用} 因为 C++11 之前只有一种引用）充当已有对象（例如变量）的别名。
+
+\begin{lstlisting}
+int      // 一个普通的 int 类型
+int&     // 一个对于 int 对象的左值引用
+double&  // 一个对于 double 对象的左值引用
+\end{lstlisting}
+
+\subsubsection*{左值引用变量}
+
+使用左值引用类型，用户可以创建一个左值引用变量。
+\textbf{左值引用变量}是一种充当左值（通常是别的变量）引用的变量。
+
+创建一个左值引用变量，只需要简单的定义一个带有左值引用类型的变量：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    int x { 5 };    // x 是一个普通的整数变量
+    int& ref { x }; // ref 是一个左值引用变量，现在用作于 x 变量的别名
+
+    std::cout << x << '\n';  // 打印 x (5)
+    std::cout << ref << '\n'; // 打印 x 通过 ref (5)
+
+    return 0;
+}
+\end{lstlisting}
+
+上述例子中，\acode{int&} 类型定义 \acode{ref} 作为 int 的左值引用，接着初始化左值表达式 \acode{x}。
+这样 \acode{ref} 和 \acode{x} 可以同义的被使用。
+
+在编译器的角度，无论 \& 符号是放在类型名称上（\acode{int\& ref}还是变量名称上（\acode{int \&ref}都没有差别，
+选择何种写法与风格有关。
+现代 C++ 程序员更加偏向前者，即 \& 与类型绑定，
+因为这样可以更清楚知道引用是类型部分的信息，而不是标识符的信息。
+
+最佳实践：定义引用时将 \& 符号放在类型边上（而不是引用变量名字）。
+
+进阶：对于已经知道指针的用户而言，\& 符号在这个上下文中不代表“什么的地址”，而是“什么的左值引用”。
+
+\subsubsection*{通过左值引用修改值}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    int x { 5 }; // 普通整数变量
+    int& ref { x }; // ref 是左值引用变量，现在用作于于变量 x 的别名
+
+    std::cout << x << ref << '\n'; // 打印 55
+
+    x = 6; // x 现在为 6
+
+    std::cout << x << ref << '\n'; // 打印 66
+
+    ref = 7; // 被引用的对象 (x) 现在为 7
+
+    std::cout << x << ref << '\n'; // 打印 77
+
+    return 0;
+}
+\end{lstlisting}
+
+上述例子中，\acode{ref} 为 \acode{x} 的别名，因此可以通过 \acode{x} 或 \acode{ref} 修改 \acode{x} 的值。
+
+\subsubsection*{左值引用的初始化}
+
+与常量相同，所有引用都必须被初始化。
+
+当一个引用被初始化了一个对象（或函数），可以说其\textbf{绑定}了该对象（或函数）。
+这个绑定的过程被称为\textbf{引用绑定}。被引用的对象（或函数）有时被称为\textbf{指示物} referent。
+
+左值引用必须绑定至一个\textit{可变}左值。
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    int x { 5 };
+    int& ref { x }; // 可行：左值引用绑定至一个可变的左值
+
+    const int y { 5 };
+    int& invalidRef { y };  // 不可行： int 引用不可被绑定至 double 变量
+    int& invalidRef2 { 0 }; // 不可行： double 引用不可被绑定至 int 变量
+
+    return 0;
+}
+\end{lstlisting}
+
+\acode{void} 的左值引用是不被允许的（它指向哪里？）。
+
+\subsubsection*{引用不可以被再复位 reseated（改变引用的对象）}
+
+C++ 中的引用一旦初始化后不可以\textbf{再复位}，意为不可以改变其引用的对象。
+
+新手 C++ 程序员经常通过赋值让引用指向另一个变量从而 reseat 引用。
+这样可以被编译和运行 -- 只不过跟预期不一样。考虑以下程序：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    int x { 5 };
+    int y { 6 };
+
+    int& ref { x }; // ref 现在为 x 的别名
+
+    ref = y; // 赋值 6（y 的值）至 x（被 ref 引用）
+    // 上述代码并不会改变 ref 的引用至变量 y ！！！
+
+    std::cout << x << '\n'; // 用户预期这里打印 5，实际上打印 6
+
+    return 0;
+}
+\end{lstlisting}
+
+当一个引用在表达式中计算，它处理的是其引用的对象。所以 \acode{ref = y} 不会改变 \acode{ref} 引用到 \acode{y}。
+相反，因为 \acode{ref} 是 \acode{x} 的别名，表达式则视为 \acode{x = y} 的计算，
+因为 \acode{y} 表示的是值 \acode{6}，\acode{x} 则被赋值了 \acode{6}。
+
+\subsubsection*{左值引用的作用域与持续性}
+
+与普通变量规则相同：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    int x { 5 }; // 普通整数
+    int& ref { x }; // 变量的引用
+
+     return 0;
+} // x 和 ref 在此消亡
+\end{lstlisting}
+
+\subsubsection*{引用与被引用者拥有独立的生命周期}
+
+除了一种情况（下一章详解）以外，引用的生命周期与其被引用的生命周期是独立的。
+换言之，下面两种情况都是对的：
+
+\begin{itemize}
+    \item 在对象被引用前，引用可以被销毁。
+    \item 被引用的对象可以在被引用时被销毁。
+\end{itemize}
+
+\subsubsection*{悬垂引用}
+
+当一个被引用的对象在被引用之前销毁了，那么引用指向的对象不再存在，这种引用被成为\textbf{悬垂引用}。
+访问悬垂引用会导致未被定义的行为。
+
+悬垂引用很容易避免，不过之后的章节中会讲到在实际代码中何时容易出现。
+
+\subsubsection*{引用非对象}
+
+在 C++ 中引用不是对象。一个引用不需要存在或者占用存储。
+如果可能的话，编译器将会通过替换被引用者至引用者来优化所有的引用。
+然而这也不总是可能的，因为如果可能，引用则会需要存储。
+
+这也意为着“引用变量”这个词并不准确，因为变量都是带有名称的对象，而引用并不是对象。
+
+\end{document}

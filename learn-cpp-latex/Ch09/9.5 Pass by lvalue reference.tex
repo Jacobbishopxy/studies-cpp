@@ -1,0 +1,246 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{5}{Pass by lvalue reference}
+
+上一章介绍了左值引用以及 const 左值引用。
+单独来看它们似乎不是很有用 -- 当可以使用变量本身的时候为什么还给变量创建别名呢？
+
+首先在一些上下文中，函数参数是被拷贝成为函数的入参：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+void printValue(int y)
+{
+    std::cout << y << '\n';
+} // y 在此销毁
+
+int main()
+{
+    int x { 2 };
+
+    printValue(x); // x 被值传递（拷贝）进入参数 y （廉价）
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{一些对象的拷贝很昂贵}
+
+大多数由标准库提供的类型（例如 \acode{std::string}）为 \acode{class types}。
+类类型的拷贝通常是很昂贵的。可能的话，应该避免不必要的对象拷贝，特别是拷贝之后又被立刻销毁。
+
+考虑以下代码：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <string>
+
+void printValue(std::string y)
+{
+    std::cout << y << '\n';
+} // y 在此销毁
+
+int main()
+{
+    std::string x { "Hello, world!" }; // x 为 std::string
+
+    printValue(x); // x 被值传递（拷贝）进入参数 y（昂贵）
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{引用传递}
+
+调用函数时，避免昂贵拷贝的一种方式是使用 \acode{pass by reference}。当使用**传递引用**时，需要定义函数的入参为引用类型（或者 const 引用类型）而不是普通类型。当函数被调用时，每个引用入参绑定合理的参数。因为引用充当参数的别名，那么就不再需要进行参数拷贝。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <string>
+
+void printValue(std::string& y) // 类型改为 std::string&
+{
+    std::cout << y << '\n';
+} // y 在此销毁
+
+int main()
+{
+    std::string x { "Hello, world!" };
+
+    printValue(x); // x 被引用传递进入参数 y（廉价）
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{引用传递进行参数的值修改}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+void addOne(int y) // y 为 x 的拷贝
+{
+    ++y; // 这里修改 x 的拷贝，而不是 x 对象
+}
+
+int main()
+{
+    int x { 5 };
+
+    std::cout << "value = " << x << '\n';
+
+    addOne(x);
+
+    std::cout << "value = " << x << '\n'; // x 没有被改变
+
+    return 0;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+void addOne(int& y) // y 绑定对象 x
+{
+    ++y; // 这里修改对象 x
+}
+
+int main()
+{
+    int x { 5 };
+
+    std::cout << "value = " << x << '\n';
+
+    addOne(x);
+
+    std::cout << "value = " << x << '\n'; // x 被改变了
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{非 const 的引用传递仅接受可变左值引用}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <string>
+
+void printValue(int& y) // y 进接受可变左值
+{
+    std::cout << y << '\n';
+}
+
+int main()
+{
+    int x { 5 };
+    printValue(x); // 正确：x 为可变左值
+
+    const int z { 5 };
+    printValue(z); // 错误：z 为不可变左值
+    printValue(5); // 错误：5 为右值
+
+    return 0;
+}
+\end{lstlisting}
+
+传递 const 引用提供同样的便利（避免参数拷贝），同时也保证函数*不会*改变其引用的值。
+
+\begin{lstlisting}[language=C++]
+void addOne(const int& ref)
+{
+    ++ref; // 不被允许：ref 是 const
+}
+\end{lstlisting}
+
+最佳实践：推荐传递 const 引用而不是非 const 引用，除非有特别的理由需要做额外的事情（例如函数需要修改入参的值）。
+
+\subsubsection*{混合值传递与引用传递}
+
+\begin{lstlisting}[language=C++]
+#include <string>
+
+void foo(int a, int& b, const std::string& c)
+{
+}
+
+int main()
+{
+    int x { 5 };
+    const std::string s { "Hello, world!" };
+
+    foo(5, x, s);
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{何时引用传递}
+
+最佳实践：基础类型使用值传递，类（或结构体）类型使用 const 引用传递。
+
+\subsubsection*{值传递与引用传递的开销}
+
+不是所有的类类型都需要引用传递。
+
+有两个关键点可以帮助我们理解何时需要值传递 vs 引用传递：
+
+首先，拷贝对象的开销普遍与两点成正比：
+
+\begin{itemize}
+    \item 对象的大小。对象使用越多的内存就需要更长的时间拷贝。
+    \item 任何其它的准备开销。一些类类型需要额外准备的当它们被实例化时（例如打开文件或者数据库，
+          或者分配特定的动态内存用以存储对象中的变量）。这些准备开销必须在每个对象拷贝时花费时间。
+\end{itemize}
+
+另一方面，为对象绑定引用总是迅速的（与拷贝基础类型的速度相同）。
+
+其次，通过引用访问对象对比直接访问对象会稍微昂贵一些。
+通过变量的标识符，编译器可以直接获取分配给变量的内存地址并访问值。
+通过引用时，通常会有额外的一步：编译器必须先判定被引用的是哪个对象。
+编译器有时也会优化代码使用对象传递值。
+这就意味着，对象被引用传递生成的代码通常会慢于值传递所生成的代码。
+
+现在可以回答为什么不在所有的地方进行引用传递：
+
+\begin{itemize}
+    \item 对于廉价的对象拷贝，拷贝的开销与绑定的开销差不多，因此推荐值传递因为代码生成会快一些。
+    \item 对于昂贵的对象拷贝，拷贝占据了大部分开销，因此推荐传递（const）引用来避免拷贝。
+\end{itemize}
+
+最佳实践：当对象拷贝廉价时，推荐值传递；对象拷贝昂贵时，推荐 const 引用传递；如果不确定，推荐后者。
+
+最后一个问题是，如何定义“廉价拷贝”？
+这里没有绝对的答案，因为这随着编译器，使用案例，架构等变化。
+然而可以设立一个简单的规则：如果一个对象使用两个或更少的“单词”的内存（一个“单词”约等于一个内存地址大小）
+以及没有准备开销，视为廉价拷贝。
+
+下面代码定义了一个宏用于判断一个类型（或对象）是有两个或者更少的内存地址：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+// 返回 true 如果类型（或者对象）使用两个或更少的内存地址
+#define isSmall(T) (sizeof(T) <= 2 * sizeof(void*))
+
+struct S
+{
+    double a, b, c;
+};
+
+int main()
+{
+    std::cout << std::boolalpha; // 打印 true 或 false 而不是 0 或 1
+    std::cout << isSmall(int) << '\n'; // true
+    std::cout << isSmall(double) << '\n'; // true
+    std::cout << isSmall(S) << '\n'; // false
+
+    return 0;
+}
+\end{lstlisting}
+
+然而很难知道一个类类型的对象是否有准备开销。最好是假设大部分的标准库都有准备开销。
+
+\end{document}

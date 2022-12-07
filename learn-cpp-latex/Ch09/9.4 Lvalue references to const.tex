@@ -1,0 +1,123 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{4}{Lvalue references to const}
+
+上一章节中讨论了左值引用只可以绑定到可变的左值上。这就意味着下面代码不合法：
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    const int x { 5 }; // x 是一个不可变的 (const) 左值
+    int& ref { x }; // 错误：ref 不可以绑定不可变左值
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{const 的左值引用}
+
+定义左值引用时使用 \acode{const} 关键字，即告诉左值引用其引用的对象为 const。
+这种引用被称为 \textbf{const} 值的左值引用（有时也称为 \textbf{reference to const} 或者 \textbf{const reference}）。
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    const int x { 5 };    // x 为不可变左值
+    const int& ref { x }; // 正确：ref 是 const 值的左值引用
+
+    return 0;
+}
+\end{lstlisting}
+
+因为 const 左值引用视为 const 的引用，它们可以被访问但是不可以被修改：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    const int x { 5 };    // x 为不可变左值
+    const int& ref { x }; // 正确：ref 是 const 值的左值引用
+
+    std::cout << ref << '\n'; // 正确：可以访问 const 对象
+    ref = 6;                  // 错误：不可以修改 const 对象
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{通过可变左值初始化 const 左值引用}
+
+const 左值引用可以绑定可变左值。这种情况下，当通过引用访问时，被引用的对象视为 const（尽管其根本的对象为非 const）：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    int x { 5 };              // x 为可变左值
+    const int& ref { x };     // 正确：可以绑定可变左值给 const 引用
+
+    std::cout << ref << '\n'; // 正确：可以通过 const 引用访问对象
+    ref = 7;                  // 错误：不可以通过 const 引用修改对象
+
+    x = 6;                    // 正确：x 为可变左值，仍然可以通过原有的标识符进行修改
+
+    return 0;
+}
+\end{lstlisting}
+
+最佳实践：更加推荐 \acode{lvalue references to const} 而不是 \acode{lvalue references to non-const} 除非需要通过引用来修改对象。
+
+\subsubsection*{通过右值初始化 const 左值引用}
+
+const 左值引用也可以绑定右值：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    const int& ref { 5 }; // 可行： 5 为右值
+
+    std::cout << ref << '\n'; // 打印 5
+
+    return 0;
+}
+\end{lstlisting}
+
+上述代码中，一个临时的对象被创建后用右值进行了初始化，const 引用绑定临时对象。
+
+\textbf{临时对象}（有时也被称为\textbf{匿名对象}）是一个为临时使用（接着销毁）而在单个表达式中创建的对象。临时对象完全没有作用域（合理，因为域是标识符的属性，而临时对象没有标识符）。这就意味着临时对象仅可以在其创建的地方使用，因为没有其他别的办法指向它。
+
+\subsubsection*{const 引用绑定临时对象延长了临时对象的生命周期}
+
+临时对象通常在其被创建的表达式结束时被销毁。
+
+然而，考虑一下上述例子中如果临时对象创建时其右值 \acode{5} 在初始化 \acode{ref} 的表达式结束时被销毁。
+\acode{ref} 引用将会变为左悬垂（引用的对象被销毁），这时尝试访问 \acode{ref} 则会得到未定义行为。
+
+为了避免这样悬垂引用的情况，C++ 有一个特别的规则：当 const 左值引用绑定了临时对象，
+临时对象的声明周期被延长到与引用的生命周期相匹配。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    const int& ref { 5 }; // 临时对象的生命周期被延长与 ref 一致
+
+    std::cout << ref << '\n'; // 因此可以在此处安全使用
+
+    return 0;
+} // ref 和临时对象在此同时被销毁
+\end{lstlisting}
+
+重点：左值引用仅可以绑定可变左值。const 左值引用可以绑定可变左值，不可变左值，以及右值。
+这使得它们成为更加灵活的引用类型。
+
+那么为什么 C++ 运行 const 引用绑定右值呢？请看下一章节。
+
+\end{document}
