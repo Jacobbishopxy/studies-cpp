@@ -1,0 +1,178 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{2}{Composition}
+
+\subsubsection*{对象组合}
+
+复杂对象通常是由小而简单的对象构成的，这个构建过程被称为\textbf{对象组合} object composition。
+
+广义上而言，对象组合构造了两个对象之间的“has-a”关系模型。复杂对象有时被称为整体，或者父；
+而简单对象被称为部分，子，或者组件。
+
+结构体与类有时被称为\textbf{组合类型} composite types。
+
+对象组合在 C++ 中很有用，因为它允许用户通过合并简单而又更好管理的不符来创建复杂的类，并减少了复杂性。
+
+\subsubsection*{对象组合的类型}
+
+对象组合又两种基础的子类型：组合 composition 与聚合 aggregation。本章讲解前者，下一章讲解后者。
+
+\subsubsection*{组合}
+
+被视为\textbf{组合}，一个对象以及其部分必须拥有以下关系：
+
+- 部分（成员）是对象（类）的一部分
+- 部分（成员）同一时间仅属于一个对象（类）
+- 部分（成员）的存在是由对象（类）所管理的
+- 部分（成员）不知道对象（类）的存在
+
+组合关系是一种“部分-整体”的关系，其中“部分”必须是“整体”对象的组成部分。
+
+在组合关系中，对象对“部分”的存在负责。
+通常而言，这意味着部分是由对象创建时而被创造，由对象销毁时而被销毁。
+更宽泛的来说，意味着对象管理“部分”的生命周期，而使用对象的用户不需要参与进来。
+
+最后是“部分”不知道“整体”的存在。这也被称为\textbf{单向} unidirectional 关系。
+
+\subsubsection*{实现组合}
+
+在 C++ 中，组合是一种实现起来最简单的关系类型。
+它们通常被创建为结构体或者带有普通数据成员的类。
+因为这些数据成员是作为结构体/类的一部分而直接存在的，
+它们的生命周期与类的实例化对象的生命周期绑定在一起。
+
+需要动态分配或者释放的组合可能由指针数据成员实现。
+这种情况下，组合类应该对所有需要内存管理的部分负责（而不是类的使用者）。
+
+通常而言，如果\textit{可以}使用组合来设计一个类，则\textit{应该}这么做。
+使用组合的类是直接，灵活，且稳固的。
+
+\subsubsection*{更多例子}
+
+Point2D.h:
+
+\begin{lstlisting}[language=C++]
+#if !defined(POINT2D_H)
+#define POINT2D_H
+
+#include <iostream>
+
+class Point2D
+{
+  int m_x;
+  int m_y;
+
+  public:
+  // 默认构造函数
+  Point2D() : m_x{0}, m_y{0} {}
+
+  // 指定构造函数
+  Point2D(int x, int y) : m_x{x}, m_y{y} {}
+
+  // 重载输出操作符
+  friend std::ostream& operator<<(std::ostream& out, const Point2D& point)
+  {
+    out << '(' << point.m_x << ", " << point.m_y << ')';
+    return out;
+  }
+
+  void setPoint(int x, int y)
+  {
+    m_x = x;
+    m_y = y;
+  }
+};
+
+#endif // POINT2D_H
+\end{lstlisting}
+
+Creature.h:
+
+\begin{lstlisting}[language=C++]
+#if !defined(CREATURE_H)
+#define CREATURE_H
+
+#include "Point2D.h"
+#include <iostream>
+#include <string>
+
+class Creature
+{
+  private:
+  /* data */
+  std::string m_name;
+  Point2D m_location;
+
+  public:
+  Creature(const std::string& name, const Point2D& location)
+      : m_name{name}, m_location{location} {}
+
+  friend std::ostream& operator<<(std::ostream& out, const Creature& creature)
+  {
+    out << creature.m_name << " is at " << creature.m_location;
+    return out;
+  }
+
+  void moveTo(int x, int y) { m_location.setPoint(x, y); }
+};
+
+#endif // CREATURE_H
+\end{lstlisting}
+
+main.cpp:
+
+\begin{lstlisting}[language=C++]
+#include "Creature.h"
+#include "Point2D.h"
+#include <iostream>
+#include <string>
+
+int main()
+{
+
+  std::cout << "Enter a name for your creature: ";
+  std::string name;
+  std::cin >> name;
+  Creature creature{name, {4, 7}};
+
+  while (true)
+  {
+    std::cout << creature << std::endl;
+
+    std::cout << "Enter new X location for create (-1 to quit): ";
+    int x{0};
+    std::cin >> x;
+    if (x == -1)
+      break;
+
+    std::cout << "Enter new Y location for create (-1 to quit): ";
+    int y{0};
+    std::cin >> y;
+    if (y == -1)
+      break;
+
+    creature.moveTo(x, y);
+  }
+
+  return 0;
+}
+
+\end{lstlisting}
+\subsubsection*{组合的变体}
+
+尽管多数组合在被创建与销毁时，会直接创建与销毁它们的“部分，但是又几种组合的变体与该规则有些差异。
+
+例如：
+
+\begin{itemize}
+  \item 组合可能会延迟一些部分的创建直到它们被需要时。
+        例如，字符串类不会创建一个字符的动态数组直到用户赋予其字符串数据用于存储。
+  \item 组合可能会选择使用一部分被给与的输入，而不是直接由自身来创建这一部分。
+  \item 组合可能会委托其它对象来销毁自身的一些部分。
+\end{itemize}
+
+这里的关键在于组合应该管理其自身的部分而不需要使用该组合的用户来管理。
+
+\end{document}
