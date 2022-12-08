@@ -1,0 +1,326 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{8}{Circular dependency issues with std::shared\_ptr, and std::weak\_ptr}
+
+上一节讲述了 \acode{std::shared\_ptr} 允许用户拥有若干智能指针协同拥有相同的资源。
+然而在某些情况下，这会变得有问题的。
+考虑以下案例，当共享指针指向两个独立对象，其中又各自指向对方：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <memory> // std::shared_ptr
+#include <string>
+
+class Person
+{
+  std::string m_name;
+  std::shared_ptr<Person> m_partner; // 初始创建为空
+
+public:
+  Person(const std::string &name): m_name(name)
+  {
+    std::cout << m_name << " created\n";
+  }
+  ~Person()
+  {
+    std::cout << m_name << " destroyed\n";
+  }
+
+  friend bool partnerUp(std::shared_ptr<Person> &p1, std::shared_ptr<Person> &p2)
+  {
+    if (!p1 || !p2)
+      return false;
+
+    p1->m_partner = p2;
+    p2->m_partner = p1;
+
+    std::cout << p1->m_name << " is now partnered with " << p2->m_name << '\n';
+
+    return true;
+  }
+};
+
+int main()
+{
+  auto lucy { std::make_shared<Person>("Lucy") }; // 创建一个名为 "Lucy" 的 Person
+  auto ricky { std::make_shared<Person>("Ricky") }; // 创建一个名为 "Ricky" 的 Person
+
+  partnerUp(lucy, ricky); // 使 "Lucy" 指向 "Ricky"，反之亦然
+
+  return 0;
+}
+\end{lstlisting}
+
+上述例子中动态分配两个 Person，“Lucy” 与 “Ricky” 使用 \acode{make\_shared()}
+（确保 \acode{lucy} 和 \acode{rick} 在 \acode{main()} 结束时销毁）。
+接着使他们 partner，即在 “Lucy” 内设置 \acode{std::shared\_ptr} 指向 “Ricky”，
+在 “Ricky” 内指向 “Lucy”。
+共享指针意味着被共享，因此 lucy 共享指针和 rick 的 m\_partner 共享指针共同指向 “Lucy”（反之亦然）。
+
+然而这个程序并不能像预期那样执行：
+
+\begin{lstlisting}
+Lucy created
+Ricky created
+Lucy is now partnered with Ricky
+\end{lstlisting}
+
+在 \acode{partnerUp()} 被调用，有两个共享指针指向 “Ricky”（ricky 以及 Lucy 的 m\_partner）
+以及两个共享指针指向 “Lucy”（lucy 以及 Ricky 的 m\_partner）。
+
+在 \acode{main()} 结束时，ricky 共享指针首先离开作用域。
+当这个发生时，ricky 检查是否有任何共享指针协调所有 ”Ricky“。有（Lucy 的 m\_partner），
+所以 ”Ricky“ 没有被释放（如果释放了，Lucy 的 m\_partner 会变成悬垂指针）。
+这个时候，有一个功效指针指向 ”Ricky“（Lucy 的 m\_partner）以及两个共享指针指向 ”Lucy“（lucy 以及 Ricky 的 m\_partner）。
+
+接着 lucy 的共享指针离开作用域，同样的事发生了。
+lucy 的共享指针检查是否有其他任何共享指针协同所有 “Lucy”。
+有（Ricky 的 m\_partner），所以 “Lucy” 没有被释放。
+这个时候，仍然有一个共享指针指向 “Lucy”（Ricky 的 m\_partner）以及一个共享指针指向 “Ricky”（Lucy 的 m\_partner）。
+
+接着程序结束 -- ”Lucy“ 或 ”Ricky“ 没有任何一个被释放！
+本质上，”Lucy“ 维系了 ”Ricky“ 不被销毁，”Ricky“ 维系了 ”Lucy“ 不被销毁。
+
+事实证明这可以发生的任何事件共享指针形成一个循环引用。
+
+\subsubsection*{循环引用}
+
+\textbf{循环引用} circular reference（同样被称为 \textbf{cyclical reference} 或 \textbf{cycle}）是一系列的引用，
+其中每个对象引用下一个，最后一个对象引用回第一个，最终导致了引用环。
+引用不需要是真实的 C++ 引用 -- 它们可以是指针，唯一 IDs，或者任何其他用于身份识别的对象。
+
+在共享指针的语境中，引用为指针。
+
+这完全就是上述例子中的：”Lucy“ 指向 ”Ricky“，同时 ”Ricky“ 指向 ”Lucy“。
+对于三指针而言，A 指向 B，B 指向 C，C 又指向 A 也会得到相同的结论。
+共享指针形成的环所造成的实际效果是每个对象都指向下一个对象 -- 最后一个对象指向第一个对象。
+因此，这种情况下没有对象会被释放，因为它们都会认为其它对象仍然需要自身！
+
+\subsubsection*{一个还原案例}
+
+实际上这种循环引用问题甚至会发生在单个 \acode{std::shared\_ptr} 上 --
+\acode{std::shared\_ptr} 引用的对象包含自身仍然是一个循环（仅为还原）。
+尽管它完全不像会在现实中发生，这里是一个额外的例子作为理解：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <memory> // std::shared_ptr
+
+class Resource
+{
+public:
+  std::shared_ptr<Resource> m_ptr {}; // 初始化为空
+
+  Resource() { std::cout << "Resource acquired\n"; }
+  ~Resource() { std::cout << "Resource destroyed\n"; }
+};
+
+int main()
+{
+  auto ptr1 { std::make_shared<Resource>() };
+
+  ptr1->m_ptr = ptr1; // m_ptr 现在共享了 Resource，包含了自身
+
+  return 0;
+}
+\end{lstlisting}
+
+上述例子中，当 \acode{ptr1} 离开作用域，\acode{Resource} 不会被释放，
+因为 \acode{Resource} 的 \acode{m\_ptr} 共享 \acode{Resource}。
+这个时候 \acode{Resource} 能被释放的唯一办法就是设置 \acode{m\_ptr} 指向其它（这样就没有任何贡献 \acode{Resource} 的了）。
+但是不能访问 \acode{m\_ptr} 因为 \acode{ptr} 离开了最重要，所以不再可能做到了。
+\acode{Resouce} 变为了内存泄漏。
+
+所以程序打印：
+
+\begin{lstlisting}
+Resource acquired
+\end{lstlisting}
+
+这样就没了。
+
+\subsubsection*{那么 std::weak\_ptr 是什么呢？}
+
+\acode{std::weak\_ptr} 被设计用来解决上述描述的”循环所有权“问题。
+一个 \acode{std::weak\_ptr} 是一个观测者 --
+它可以观测并像 \acode{std::shared\_ptr}（或者其他 \acode{std::weak\_ptr}）那样访问同一个对象，
+但是不会被认为成一个所有者。
+牢记当一个 \acode{std::shared} 指针离开作用域，它仅会考虑是否有其他的 \acode{std::shared\_ptr} 协同所有对象，
+而 \acode{std::weak\_ptr} 则不会考虑！
+
+现在通过 \acode{std::weak\_ptr} 来解决之前的问题：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <memory> // std::shared_ptr 与 std::weak_ptr
+#include <string>
+
+class Person
+{
+  std::string m_name;
+  std::weak_ptr<Person> m_partner; // 注意：这里现在是一个 std::weak_ptr
+
+public:
+  Person(const std::string &name): m_name(name)
+  {
+    std::cout << m_name << " created\n";
+  }
+  ~Person()
+  {
+    std::cout << m_name << " destroyed\n";
+  }
+
+  friend bool partnerUp(std::shared_ptr<Person> &p1, std::shared_ptr<Person> &p2)
+  {
+    if (!p1 || !p2)
+      return false;
+
+    p1->m_partner = p2;
+    p2->m_partner = p1;
+
+    std::cout << p1->m_name << " is now partnered with " << p2->m_name << '\n';
+
+    return true;
+  }
+};
+
+int main()
+{
+  auto lucy { std::make_shared<Person>("Lucy") };
+  auto ricky { std::make_shared<Person>("Ricky") };
+
+  partnerUp(lucy, ricky);
+
+  return 0;
+}
+\end{lstlisting}
+
+现在代码行为正常了：
+
+\begin{lstlisting}
+Lucy created
+Ricky created
+Lucy is now partnered with Ricky
+Ricky destroyed
+Lucy destroyed
+\end{lstlisting}
+
+\subsubsection*{使用 std::weak\_ptr}
+
+\acode{std::weak\_ptr} 的缺陷是它不能直接使用（它们并没有操作符->）。
+为了使用一个 \acode{std::weak\_ptr}，
+必须先转换其成为一个 \acode{std::shared\_ptr}。
+可以使用 \acode{lock()} 成员函数进行转换。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <memory> // std::shared_ptr 与 std::weak_ptr
+#include <string>
+
+class Person
+{
+  std::string m_name;
+  std::weak_ptr<Person> m_partner; // 注意：这里现在是一个 std::weak_ptr
+
+public:
+
+  Person(const std::string &name) : m_name(name)
+  {
+    std::cout << m_name << " created\n";
+  }
+  ~Person()
+  {
+    std::cout << m_name << " destroyed\n";
+  }
+
+  friend bool partnerUp(std::shared_ptr<Person> &p1, std::shared_ptr<Person> &p2)
+  {
+    if (!p1 || !p2)
+      return false;
+
+    p1->m_partner = p2;
+    p2->m_partner = p1;
+
+    std::cout << p1->m_name << " is now partnered with " << p2->m_name << '\n';
+
+    return true;
+  }
+
+  const std::shared_ptr<Person> getPartner() const { return m_partner.lock(); } // 使用 lock() 转换 weak_ptr 成为 shared_ptr
+  const std::string& getName() const { return m_name; }
+};
+
+int main()
+{
+  auto lucy { std::make_shared<Person>("Lucy") };
+  auto ricky { std::make_shared<Person>("Ricky") };
+
+  partnerUp(lucy, ricky);
+
+  auto partner = ricky->getPartner(); // 获取 shared_ptr 为 Ricky 的 partner
+  std::cout << ricky->getName() << "'s partner is: " << partner->getName() << '\n';
+
+  return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+Lucy created
+Ricky created
+Lucy is now partnered with Ricky
+Ricky's partner is: Lucy
+Ricky destroyed
+Lucy destroyed
+\end{lstlisting}
+
+不需要担心 \acode{std::shared\_ptr} 变量 ”partner“ 循环依赖，
+因为它仅为函数内部的一个本地变量。
+它最终会在函数结束时离开作用域，同时引用计数减少了 1。
+
+\subsubsection*{std::weak\_ptr 的悬垂指针}
+
+因为 \acode{std::weak\_ptr} 并不会维持其所持的资源存活，
+那么对于一个 \acode{std::weak\_ptr} 而言，
+留下它指向一个已被 \acode{std::shared\_ptr} 释放的对象也是有可能的。
+这样的 \acode{std::weak\_ptr} 变成了悬垂，使用它会导致未定义行为。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <memory>
+
+class Resource
+{
+public:
+  Resource() { std::cerr << "Resource acquired\n"; }
+  ~Resource() { std::cerr << "Resource destroyed\n"; }
+};
+
+auto getWeakPtr()
+{
+  auto ptr{ std::make_shared<Resource>() }; // Resource 获取
+
+  return std::weak_ptr{ ptr };
+} // ptr 离开作用域， Resource 被销毁
+
+int main()
+{
+  std::cerr << "Getting weak_ptr...\n";
+
+  auto ptr{ getWeakPtr() }; // 悬垂
+
+  std::cerr << "Done.\n";
+}
+\end{lstlisting}
+
+上述例子中，在 \acode{getWeakPtr()} 中使用 \acode{std::make\_shared()}
+来创建一个名为 \acode{ptr} 并所有 \acode{Resource} 对象的 \acode{std::shared\_ptr} 变量。
+函数返回一个 \acode{std::weak\_ptr} 给调用者，其不增加引用计数。
+由于 \acode{ptr} 是本地变量，它在函数结束时离开作用域，即减少引用计数至 0，
+同时释放 \acode{Resource} 对象。
+返回的 \acode{std::weak\_ptr} 变成了悬垂指针，其指向的 \acode{Resource} 被释放过了。
+
+\end{document}
