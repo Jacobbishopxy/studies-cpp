@@ -1,0 +1,193 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{14}{Static member functions}
+
+上一章讲解了 static 成员变量，知道了它们是属于类的而不是该类对象的。
+如果 static 成员变量是公有的，则可以通过类名以及作用域解析操作符直接访问它们。
+那么如果 static 成员变量是私有的呢？
+
+考虑以下例子：
+
+\begin{lstlisting}[language=C++]
+class Something
+{
+private:
+    static int s_value;
+
+};
+
+int Something::s_value{ 1 }; // 初始化，这是可以的，即使 s_value 的声明是私有的
+
+int main()
+{
+    // 那么这里该如何访问私有的 Something::s_value 呢？
+}
+\end{lstlisting}
+
+上述情况在 main 中不可以直接访问 \acode{Something::s\_value}，因为它是私有的。
+通常而言可以通过公有成员函数来访问私有成员。
+而创建一个普通的公有成员函数来访问 \acode{s\_value} 首先需要初始化一个该类的对象才能使用该公有函数！
+可以有更好的办法，那就是使函数 static。
+
+类似于 static 成员变量，static 成员函数也没有依附于任何对象。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class Something
+{
+private:
+    static int s_value;
+public:
+    static int getValue() { return s_value; } // static 成员函数
+};
+
+int Something::s_value{ 1 }; // 初始化
+
+int main()
+{
+    std::cout << Something::getValue() << '\n';
+}
+\end{lstlisting}
+
+\subsubsection*{static 成员函数没有 *this 指针}
+
+static 成员函数有两个有趣的怪异之处值得注意。
+首先，因为 static 成员函数没有依附于任何对象，它们没有 \textit{this} 指针！
+想象一下也很合理 -- \textit{this} 指针指向的总是对象。
+static 成员函数并不作用于对象，因此 \textit{this} 指针是不需要的。
+
+其次，static 成员函数可以直接访问其它的 static 成员（变量或函数），
+但是不能访问非 static 成员。
+这是因为非 static 成员必须属于一个类对象，而 static 成员函数与对象无关！
+
+\subsubsection*{另一个案例}
+
+static 成员函数可以定义在类声明的外边。这与普通的成员函数一样：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class IDGenerator
+{
+private:
+    static int s_nextID; // static 成员的声明
+
+public:
+     static int getNextID(); // static 函数的声明
+};
+
+// 在类的外边定义 static 成员。注意这里不要使用 static 关键字。
+// 在 1 生成 IDs
+int IDGenerator::s_nextID{ 1 };
+
+// 在类的外边定义 static 函数。注意这里不要使用 static 关键字。
+int IDGenerator::getNextID() { return s_nextID++; }
+
+int main()
+{
+    for (int count{ 0 }; count < 5; ++count)
+        std::cout << "The next ID is: " << IDGenerator::getNextID() << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+The next ID is: 1
+The next ID is: 2
+The next ID is: 3
+The next ID is: 4
+The next ID is: 5
+\end{lstlisting}
+
+\subsubsection*{一个关于所有带有 static 成员的类的警告}
+
+注意当编写带有 static 成员的类时，尽管“pure static classes”（也被称为“monostates”）很有用，但是同时也带来了一些缺点。
+
+首先，因为所有的 static 成员只会实例化一次，因此没有办法获得多个纯 static 类（不进行拷贝以及重命名类的情况下）。
+例如如果需要两个独立的 IDGenerator 对象，在一个纯 static 类的情况下，这是不可能的。
+
+其次，全局变量是危险的，因为任何微小的代码可以修改其值，并破坏了另一处看似无关的代码。
+这同样也是纯 static 类的问题，因为所有成员都属于类（而不是类的对象），
+而类的声明通常拥有全局作用域，一个纯 static 类基本上等于把函数以及变量声明在了全局可访问的命名空间，
+也就带来了全局变量所拥有的缺点。
+
+\subsubsection*{C++ 不支持 static 构造函数}
+
+如果通过构造函数可以初始换普通成员，那么对其延伸就意味着可以通过 static 构造函数来初始化 static 成员函数。
+虽然有一些现代语言确实支持 static 构造函数来达到这个目的，但是不幸的是 C++ 并不是它们这些现代语言其中之一。
+
+如果 static 变量可以被直接初始化，则不需要构造函数：可以在定义的地方直接初始化 static 成员变量（即使是私有的）。
+上面的例子就是这么做的。以下是另一个例子：
+
+\begin{lstlisting}[language=C++]
+class MyClass
+{
+public:
+  static std::vector<char> s_mychars;
+};
+
+std::vector<char> MyClass::s_mychars{ 'a', 'e', 'i', 'o', 'u' }; // 在定义处初始化 static 变量
+\end{lstlisting}
+
+如果初始化 static 成员变量需要执行代码（例如循环），则有很多不同的笨拙的方法来完成它。
+一种对所有变量，无论是否 static 的方法是使用 lambda 并立刻调用它。
+
+\begin{lstlisting}[language=C++]
+class MyClass
+{
+public:
+    static std::vector<char> s_mychars;
+};
+
+std::vector<char> MyClass::s_mychars{
+  []{ // lambdas 在没有参数时可以省略参数列表
+      // 在 lambda 内可以声明另一个 vector 并使用循环
+      std::vector<char> v{};
+
+      for (char ch{ 'a' }; ch <= 'z'; ++ch)
+      {
+          v.push_back(ch);
+      }
+
+      return v;
+  }() // 立马调用 lambda
+};
+\end{lstlisting}
+
+下列代码看起来更像是通常的构造函数。然而，它有一点诡异，且应当永远不需要它。
+
+\begin{lstlisting}[language=C++]
+class MyClass
+{
+public:
+  static std::vector<char> s_mychars;
+
+  class init_static // 定义一个名为 init_static 的嵌套类
+  {
+  public:
+    init_static() // 初始化构造函数初始化 static 变量
+    {
+      for (char ch{ 'a' }; ch <= 'z'; ++ch)
+      {
+        s_mychars.push_back(ch);
+      }
+    }
+  };
+
+private:
+  static init_static s_initializer; // 使用这个 static 对象来确保 init_static 构造函数被调用
+};
+
+std::vector<char> MyClass::s_mychars{}; // 定义 static 成员变量
+MyClass::init_static MyClass::s_initializer{}; // 定义 static 初始化，其调用 init_static 构造函数并初始化 s_mychars
+\end{lstlisting}
+
+当 static 成员 s\_initializer 被定义，init\_static() 默认构造函数会被调用（因为 s\_initializer 类型为 init\_static）。可以使用这个构造函数来初始化任何 static 成员变量。这个方法的好处是所有的初始化代码通过 static 成员都被隐藏在原始类中。
+
+\end{document}
