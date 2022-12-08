@@ -1,0 +1,212 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{4}{Overloading the IO operators}
+
+对于拥有若干成员变量的类而言，打印每个独立的变量在屏幕上令人厌倦。例如考虑以下类：
+
+\begin{lstlisting}[language=C++]
+class Point
+{
+private:
+    double m_x{};
+    double m_y{};
+    double m_z{};
+
+public:
+    Point(double x=0.0, double y=0.0, double z=0.0)
+      : m_x{x}, m_y{y}, m_z{z}
+    {
+    }
+
+    double getX() const { return m_x; }
+    double getY() const { return m_y; }
+    double getZ() const { return m_z; }
+};
+\end{lstlisting}
+
+如果希望打印这个类的实力在屏幕上，需要如下：
+
+\begin{lstlisting}[language=C++]
+Point point{5.0, 6.0, 7.0};
+
+std::cout << "Point(" << point.getX() << ", " <<
+    point.getY() << ", " <<
+    point.getZ() << ')';
+\end{lstlisting}
+
+当然使用一个可复用的函数更有意义：
+
+\begin{lstlisting}[language=C++]
+class Point
+{
+private:
+    double m_x{};
+    double m_y{};
+    double m_z{};
+
+public:
+    Point(double x=0.0, double y=0.0, double z=0.0)
+      : m_x{x}, m_y{y}, m_z{z}
+    {
+    }
+
+    double getX() const { return m_x; }
+    double getY() const { return m_y; }
+    double getZ() const { return m_z; }
+
+    void print() const
+    {
+        std::cout << "Point(" << m_x << ", " << m_y << ", " << m_z << ')';
+    }
+};
+\end{lstlisting}
+
+这样更好一点，但是仍然有缺陷。因为 \acode{print()} 返回 \acode{void}，它不能在输出声明中调用，因此需要这么做：
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    const Point point{5.0, 6.0, 7.0};
+
+    std::cout << "My point is: ";
+    point.print();
+    std::cout << " in Cartesian space.\n";
+}
+\end{lstlisting}
+
+那如果是以下这样会更简单：
+
+\begin{lstlisting}[language=C++]
+Point point{5.0, 6.0, 7.0};
+cout << "My point is: " << point << " in Cartesian space.\n";
+\end{lstlisting}
+
+返回同样的结果，且不会破坏若干声明的输出，也不需要记住打印函数。
+
+幸运的是，重载 << 操作符可以达到这样的效果！
+
+\subsubsection*{重载操作符<<}
+
+重载操作符<< 类似于重载操作符+（它们皆为二元操作符），只不过参数类型不同。
+
+考虑这样一个表达式 \acode{std::cout << point}。如果操作符为 <<，那么运算对象呢？
+左侧的运算对象是 std::cout 对象，而右侧的运算对象则是 Point 类对象。
+std::cout 实际上是一个类型为 std::ostream 的对象。因此重载函数应该像这样：
+
+\begin{lstlisting}[language=C++]
+// std::ostream is the type for object std::cout
+friend std::ostream& operator<< (std::ostream& out, const Point& point);
+\end{lstlisting}
+
+为 Point 类实现操作符<< 非常的直接 -- 因为 C++ 已经知道了如何使用操作符<< 输出 doubles，
+且所有成员也都是 doubles，那么可以简单的使用操作符<< 来输出 Point 的成员变量。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class Point
+{
+private:
+    double m_x{};
+    double m_y{};
+    double m_z{};
+
+public:
+    Point(double x=0.0, double y=0.0, double z=0.0)
+      : m_x{x}, m_y{y}, m_z{z}
+    {
+    }
+
+    friend std::ostream& operator<< (std::ostream& out, const Point& point);
+};
+
+std::ostream& operator<< (std::ostream& out, const Point& point)
+{
+    // 因为 operator<<  是 Point 类的友元，可以直接访问 Point 的成员。
+    out << "Point(" << point.m_x << ", " << point.m_y << ", " << point.m_z << ')'; // 真实输出在这里完成
+
+    return out; // 返回 std::ostream 使得可以串联调用 operator<<
+}
+
+int main()
+{
+    const Point point1{2.0, 3.0, 4.0};
+
+    std::cout << point1 << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+Point(2, 3.5, 4) Point(6, 7.5, 8)
+\end{lstlisting}
+
+\subsubsection*{重载操作符>>}
+
+同样的重载输入操作符也是可以的。其实现与输出操作符相似，
+重点在于了解 \acode{std::cin} 是 \acode{std::istream} 类型的对象。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class Point
+{
+private:
+    double m_x{};
+    double m_y{};
+    double m_z{};
+
+public:
+    Point(double x=0.0, double y=0.0, double z=0.0)
+      : m_x{x}, m_y{y}, m_z{z}
+    {
+    }
+
+    friend std::ostream& operator<< (std::ostream& out, const Point& point);
+    friend std::istream& operator>> (std::istream& in, Point& point);
+};
+
+std::ostream& operator<< (std::ostream& out, const Point& point)
+{
+    // Since operator<< is a friend of the Point class, we can access Point's members directly.
+    out << "Point(" << point.m_x << ", " << point.m_y << ", " << point.m_z << ')';
+
+    return out;
+}
+
+std::istream& operator>> (std::istream& in, Point& point)
+{
+    // 因为 operator<<  是 Point 类的友元，可以直接访问 Point 的成员。
+    // 注意参数 point 必须是非 const 的，因此可以使用输入值修改其类成员
+    in >> point.m_x;
+    in >> point.m_y;
+    in >> point.m_z;
+
+    return in;
+}
+
+int main()
+{
+    std::cout << "Enter a point: ";
+
+    Point point;
+    std::cin >> point;
+
+    std::cout << "You entered: " << point << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+假设用户输入了 \acode{3.0 4.5 7.26}，则打印：
+
+\begin{lstlisting}
+You entered: Point(3, 4.5, 7.26)
+\end{lstlisting}
+
+\end{document}
