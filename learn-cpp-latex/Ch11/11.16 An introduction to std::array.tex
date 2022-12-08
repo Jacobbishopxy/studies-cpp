@@ -1,0 +1,269 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{16}{An introduction to std::array}
+
+之前的章节谈到过固定与动态数组，尽管它们都内置于 C++，它们都有缺陷：
+固定数组衰退成为指针，丢失数组长度信息；
+动态数组内存释放的麻烦，以及重置数组长度所面临的风险。
+
+为了解决这些问题，C++ 标准库包含了功能性的数组：
+\acode{std::array} 以及 \acode{std::vector}。
+本章讲解前者，下一章节讲解后者。
+
+\subsubsection*{简介 std::array}
+
+\acode{std::array} 提供固定数组的功能且传递给函数式不会退化，
+其定义于 \acode{<array>} 头文件中的 \acode{std} 命名空间。
+
+\begin{lstlisting}[language=C++]
+#include <array>
+
+std::array<int, 3> myArray; // 声明一个长度为 3 的整数数组
+\end{lstlisting}
+
+可以使用 initializer lists 或者 list initialization 来进行 \acode{std::array} 初始化：
+
+\begin{lstlisting}[language=C++]
+std::array<int, 5> myArray = { 9, 7, 5, 3, 1 }; // initializer list
+std::array<int, 5> myArray2 { 9, 7, 5, 3, 1 };  // list initialization
+\end{lstlisting}
+
+有别于内建的固定数组，\acode{std::array} 不能省略数组长度：
+
+\begin{lstlisting}[language=C++]
+std::array<int, > myArray { 9, 7, 5, 3, 1 };  // 非法：必须提供数组长度
+std::array<int> myArray { 9, 7, 5, 3, 1 };    // 非法：必须提供数组长度
+\end{lstlisting}
+
+然而从 C++17 开始，允许省略类型和长度。
+它们可以被同时省略，但是不能仅省略其中之一，同时数组必须是显式的初始化：
+
+\begin{lstlisting}[language=C++]
+std::array myArray { 9, 7, 5, 3, 1 }; // 类型被推导成 std::array<int, 5>
+std::array myArray { 9.7, 7.31 };     // 类型被推导成 std::array<double, 2>
+\end{lstlisting}
+
+从 C++20 开始，可以指定元素类型同时省略数组长度：
+
+\begin{lstlisting}[language=C++]
+auto myArray1 { std::to_array<int, 5>({ 9, 7, 5, 3, 1 }) }; // 指定类型与长度
+auto myArray2 { std::to_array<int>({ 9, 7, 5, 3, 1 }) };    // 仅指定类型，推导长度
+auto myArray3 { std::to_array({ 9, 7, 5, 3, 1 }) };         // 推导类型与长度
+\end{lstlisting}
+
+不幸的是，\acode{std::to_array} 比起直接创建 \acode{std::array} 而言更昂贵，
+因为它实际上会从 C-style 数组中拷贝所有元素到 \acode{std::array}。
+正因如此，应该避免使用 \acode{std::to_array}，特别是创建很多次的环境下（例如在一个循环中）。
+
+也可以对数组进行赋值：
+
+\begin{lstlisting}[language=C++]
+std::array<int, 5> myArray;
+myArray = { 0, 1, 2, 3, 4 };    // okay
+myArray = { 9, 8, 7 };          // okay，元素 3 和 4 设置为零！
+myArray = { 0, 1, 2, 3, 4, 5 }; // 不允许，超出范围
+\end{lstlisting}
+
+使用下标操作符访问 \acode{std::array} 的值：
+
+\begin{lstlisting}[language=C++]
+std::cout << myArray[1] << '\n';
+myArray[2] = 6;
+\end{lstlisting}
+
+与内建的固定数组一样，下标操作符不会有任何的范围检查，
+如果提供了无效的索引，未定义行为会发生。
+
+\acode{std::array} 提供了另一种元素访问的方式（\acode{at()} 函数）带有范围检查（运行时）：
+
+\begin{lstlisting}[language=C++]
+std::array myArray { 9, 7, 5, 3, 1 };
+myArray.at(1) = 6;  // 数组元素 1 有效, 设置第二个元素为 6
+myArray.at(9) = 10; // 数组元素 9 无效，抛出运行时异常
+\end{lstlisting}
+
+\subsubsection*{长度与排序}
+
+\acode{size()} 函数可以用于获取 \acode{std::array} 的长度：
+
+\begin{lstlisting}[language=C++]
+std::array myArray { 9.0, 7.2, 5.4, 3.6, 1.8 };
+std::cout << "length: " << myArray.size() << '\n';
+\end{lstlisting}
+
+因为当传递给函数时 \acode{std::array} 不会衰退成指针，\acode{size()} 函数可用：
+
+\begin{lstlisting}[language=C++]
+#include <array>
+#include <iostream>
+
+void printLength(const std::array<double, 5>& myArray)
+{
+    std::cout << "length: " << myArray.size() << '\n';
+}
+
+int main()
+{
+    std::array myArray { 9.0, 7.2, 5.4, 3.6, 1.8 };
+
+    printLength(myArray);
+
+    return 0;
+}
+\end{lstlisting}
+
+注意标准库使用“size”意为数组长度 -- 不要与 \acode{sizeof()} 固定数组搞混淆（即返回数组的内存大小）。
+这里面的命名并不一致。
+
+最佳实践：总是传递 \acode{std::array} 的引用，或者 \acode{const} 引用。
+
+因为长度总是已知的，range-based for-loops 也可以用于 \acode{std::array}：
+
+\begin{lstlisting}[language=C++]
+std::array myArray{ 9, 7, 5, 3, 1 };
+
+for (int element : myArray)
+    std::cout << element << ' ';
+\end{lstlisting}
+
+可以使用 \acode{std::sort} 对 \acode{std::array} 进行排序，位于 \acode{<algorithm>} 头文件：
+
+\begin{lstlisting}[language=C++]
+#include <algorithm> // for std::sort
+#include <array>
+#include <iostream>
+
+int main()
+{
+    std::array myArray { 7, 3, 1, 9, 5 };
+    std::sort(myArray.begin(), myArray.end());      // 前向排序
+    // std::sort(myArray.rbegin(), myArray.rend()); // 后向排序
+
+    for (int element : myArray)
+        std::cout << element << ' ';
+
+    std::cout << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{传递不同长度的 std::array 给函数}
+
+\begin{lstlisting}[language=C++]
+#include <array>
+#include <cstddef>
+#include <iostream>
+
+// printArray 是一个模板函数
+template <typename T, std::size_t size> // 模板化元素类型与长度
+void printArray(const std::array<T, size>& myArray)
+{
+    for (auto element : myArray)
+        std::cout << element << ' ';
+    std::cout << '\n';
+}
+
+int main()
+{
+    std::array myArray5{ 9.0, 7.2, 5.4, 3.6, 1.8 };
+    printArray(myArray5);
+
+    std::array myArray7{ 9.0, 7.2, 5.4, 3.6, 1.8, 1.2, 0.7 };
+    printArray(myArray7);
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{通过 size\_type 手动索引 std::array}
+
+\begin{lstlisting}[language=C++]
+#include <array>
+#include <iostream>
+
+int main()
+{
+    std::array myArray { 7, 3, 1, 9, 5 };
+
+    // std::array<int, 5>::size_type 是 size() 的返回值！
+    for (std::array<int, 5>::size_type i{ 0 }; i < myArray.size(); ++i)
+        std::cout << myArray[i] << ' ';
+
+    std::cout << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+更好的可读性：
+
+\begin{lstlisting}[language=C++]
+#include <array>
+#include <cstddef> // std::size_t
+#include <iostream>
+
+int main()
+{
+    std::array myArray { 7, 3, 1, 9, 5 };
+
+    for (std::size_t i{ 0 }; i < myArray.size(); ++i)
+        std::cout << myArray[i] << ' ';
+
+    std::cout << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+更好的方式是避免对 \acode{std::array} 进行手动索引，
+而是用 range-based for-loops (或迭代器)。
+
+\subsubsection*{结构体数组}
+
+\begin{lstlisting}[language=C++]
+#include <array>
+#include <iostream>
+
+struct House
+{
+    int number{};
+    int stories{};
+    int roomsPerStory{};
+};
+
+int main()
+{
+    std::array<House, 3> houses{};
+
+    houses[0] = { 13, 4, 30 };
+    houses[1] = { 14, 3, 10 };
+    houses[2] = { 15, 3, 40 };
+
+    for (const auto& house : houses)
+    {
+        std::cout << "House number " << house.number
+                  << " has " << (house.stories * house.roomsPerStory)
+                  << " rooms\n";
+    }
+
+    return 0;
+}
+\end{lstlisting}
+
+初始化：
+
+\begin{lstlisting}[language=C++]
+// 与预期一致
+std::array<House, 3> houses { // houses 的初始化器
+    { // 额外一层花括号用于初始化位于 std::array 结构体内部的 C-style 的数组成员
+        { 13, 4, 30 }, // initializer for array element 0
+        { 14, 3, 10 }, // initializer for array element 1
+        { 15, 3, 40 }, // initializer for array element 2
+     }
+};
+\end{lstlisting}
+
+\end{document}

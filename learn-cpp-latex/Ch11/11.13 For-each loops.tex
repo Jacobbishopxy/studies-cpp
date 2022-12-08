@@ -1,0 +1,204 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{13}{For-each loops}
+
+在 11.3 中使用了 \textit{for 循环}来遍历数组中的所有元素：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <iterator> // std::size
+
+int main()
+{
+    constexpr int scores[]{ 84, 92, 76, 81, 56 };
+    constexpr int numStudents{ std::size(scores) };
+
+    int maxScore{ 0 };
+    for (int student{ 0 }; student < numStudents; ++student)
+    {
+        if (scores[student] > maxScore)
+        {
+            maxScore = scores[student];
+        }
+    }
+
+    std::cout << "The best score was " << maxScore << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+有另一种简单且安全的循环被称为 \textbf{for-each} 循环（也被称为 \textbf{range-based for-loop}），
+可以遍历数组中的所有元素（或者其它 list-type 结果）。
+
+\subsubsection*{For-each 循环}
+
+\textit{for-each} 声明的语法类似于：
+
+\begin{lstlisting}
+for (element_declaration : array)
+   statement;
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    constexpr int fibonacci[]{ 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 };
+    for (int number : fibonacci) // 遍历 fibonacci 数组
+    {
+       std::cout << number << ' '; // 访问数组元素
+    }
+
+    std::cout << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{For each 循环以及 auto 关键字}
+
+由于元素声明需要与数组元素类型一致，这里使用 \acode{auto} 关键字是一个好主意，
+让 C++ 帮助进行类型推导。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    constexpr int fibonacci[]{ 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 };
+    for (auto number : fibonacci) // 类型为 auto，number 的类型由数组进行推导
+    {
+       std::cout << number << ' ';
+    }
+
+    std::cout << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{For each 循环以及引用}
+
+\begin{lstlisting}[language=C++]
+std::string array[]{ "peter", "likes", "frozen", "yogurt" };
+for (auto element : array) // 元素将被拷贝
+{
+    std::cout << element << ' ';
+}
+\end{lstlisting}
+
+这就意味着遍历到的每个数组元素都会被拷贝，这就非常的昂贵，大多数时候仅仅只需要引用原来的元素。幸运的是可以使用引用：
+
+\begin{lstlisting}[language=C++]
+std::string array[]{ "peter", "likes", "frozen", "yogurt" };
+for (auto& element: array) // & 符号可以使元素成为引用，阻止拷贝发生
+{
+    std::cout << element << ' ';
+}
+\end{lstlisting}
+
+上述例子，元素会变成引用，另外任何对元素的修改都会影响被遍历的数组。因此有时候使用 \acode{const} 引用意为只需要可读功能：
+
+\begin{lstlisting}[language=C++]
+std::string array[]{ "peter", "likes", "frozen", "yogurt" };
+for (const auto& element: array) // 元素现在是 const 引用
+{
+    std::cout << element << ' ';
+}
+\end{lstlisting}
+
+最佳实践：在 for-each 循环元素声明中，如果元素不是基础类型，
+因为性能原因，推荐使用引用或者 \acode{const} 引用。
+
+\subsubsection*{For-each 不能作用于数组指针}
+
+由于需要遍历整个数组，for-each 需要知道数组的大小，这就意味着数组长度已知。
+因为数组会退化成指针而丢失大小，for-each 则不能工作！
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int sumArray(const int array[]) // array 为指针
+{
+    int sum{ 0 };
+
+    for (auto number : array) // 编译错误，array 的大小不可知
+    {
+        sum += number;
+    }
+
+    return sum;
+}
+
+int main()
+{
+     constexpr int array[]{ 9, 7, 5, 3, 1 };
+
+     std::cout << sumArray(array) << '\n'; // array 在这里退化成指针
+
+     return 0;
+}
+\end{lstlisting}
+
+动态数组也因为同样的原因不能工作。
+
+\subsubsection*{如何获取当前元素的索引？}
+
+\textit{For-each} 循环\textit{没有提供}直接获取数组当前元素索引的方法。
+这是因为 \textit{for-each} 循环还可以用于很多不能直接索引的结构（例如链表）。
+
+从 C++20 开始，range-based for-loops 可以使用\textbf{初始声明} init-statement，即与普通 for 循环一样。
+可以使用初始声明来手动创建索引计数从而不去污染 for-loop 中的函数。
+
+初始声明的语法如下：
+
+\begin{lstlisting}
+for (init-statement; element_declaration : array)
+   statement;
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    std::string names[]{ "Alex", "Betty", "Caroline", "Dave", "Emily" }; // 学生名字
+    constexpr int scores[]{ 84, 92, 76, 81, 56 };
+    int maxScore{ 0 };
+
+    for (int i{ 0 }; auto score : scores) // i 是当前元素的索引
+    {
+        if (score > maxScore)
+        {
+            std::cout << names[i] << " beat the previous best score of " << maxScore << " by " << (score - maxScore) << " points!\n";
+            maxScore = score;
+        }
+
+        ++i;
+    }
+
+    std::cout << "The best score was " << maxScore << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+Alex beat the previous best score of 0 by 84 points!
+Betty beat the previous best score of 84 by 8 points!
+The best score was 92
+\end{lstlisting}
+
+需要注意的是如果有 \acode{continue} 在循环内，\acode{++i} 会被跳过而导致非预期结果，
+因此需要确保 \acode{i} 在触发 \acode{continue} 之前自增。
+
+在 C++20 之前，变量 \acode{i} 需要在循环外部声明，
+这可能在函数内部有另一个 \acode{i} 的时候导致命名冲突。
+
+\end{document}
