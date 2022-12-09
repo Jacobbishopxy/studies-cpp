@@ -1,0 +1,319 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{10}{Dynamic casting}
+
+8.5 章节讲到了显式类型转换（casting）以及 static\_cast，
+本章节继续测试另一种类型的 cast：dynamic\_cast。
+
+\subsubsection*{dynamic\_cast 的需求}
+
+在处理多态时，经常会遇到指针指向的是基类，但是又希望能访问派生类中的信息。
+
+考虑以下代码（稍微有些做作）：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <string>
+
+class Base
+{
+protected:
+  int m_value{};
+
+public:
+  Base(int value)
+    : m_value{value}
+  {
+  }
+
+  virtual ~Base() = default;
+};
+
+class Derived : public Base
+{
+protected:
+  std::string m_name{};
+
+public:
+  Derived(int value, const std::string& name)
+    : Base{value}, m_name{name}
+  {
+  }
+
+  const std::string& getName() const { return m_name; }
+};
+
+Base* getObject(bool returnDerived)
+{
+  if (returnDerived)
+    return new Derived{1, "Apple"};
+  else
+    return new Base{2};
+}
+
+int main()
+{
+  Base* b{ getObject(true) };
+
+  // 在仅有基类指针的情况下，如何打印派生类对象的名字？
+
+  delete b;
+
+  return 0;
+}
+\end{lstlisting}
+
+这个程序中，函数 \acode{getObject()} 总是返回一个 \acode{Base} 指针，
+但是该指针很有可能本身是指向 \acode{Base} 或 \acode{Derived} 的对象的。
+这个例子中的指针指向的是 \acode{Derived} 的对象，
+那么该如何调用 \acode{Derived::getName()} 呢？
+
+一种方法是添加名为 \acode{getName()} 的虚函数至 \acode{Base} 中（这样可以通过 \acode{Base} 的指针/引用来进行调用，
+同时使其动态解析成 \acode{Derived::getName()}）。
+但是如果通过 \acode{Base} 指针/引用而实际上其指向的是 \acode{Base} 对象时，
+调用这个函数返回的是什么呢？这个时候其实没有任何值具有意义。
+此外，有些应该只在派生类中考虑的东西将会污染 \acode{Base} 类。
+
+众所周知 C++ 将隐式转换 \acode{Derived} 指针称为 \acode{Base} 指针。
+这个过程有时被称为\textbf{向上转型} upcasting。
+然而是否有一种方法使得 \acode{Base} 指针转换回 \acode{Derived} 指针呢？
+这样就可以使用该指针直接调用 \acode{Derived::getName()}，且不需要担心虚函数的解析了。
+
+\subsubsection*{dynamic\_cast}
+
+C++ 提供了一种名为 \textbf{dynamic\_cast} 的转型操作符以完成上述目的。
+尽管动态转型只有很少的功能，现在位置最常用的地方是转化基类指针称为派生类指针。
+这个过程被称为\textbf{向下转型} downcasting。
+
+dynamic\_cast 的使用与 static\_cast 类似。
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+  Base* b{ getObject(true) };
+
+  Derived* d{ dynamic_cast<Derived*>(b) }; // 使用动态转型转换 Base 指针成为 Derived 指针
+
+  std::cout << "The name of the Derived is: " << d->getName() << '\n';
+
+  delete b;
+
+  return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+The name of the Derived is: Apple
+\end{lstlisting}
+
+\subsubsection*{dynamic\_cast 失败}
+
+上述例子可以工作是因为 \acode{b} 实际上指向的是 \acode{Derived} 对象，
+因此转换 \acode{b} 成为 \acode{Derived} 指针可以成功。
+
+然而我们这里下定了一个危险的假设：\acode{b} 指向的是 \acode{Derived} 对象，
+那么如果 \acode{b} 指向的不是 \acode{Derived} 对象呢？
+通过改变 \acode{getObject()} 的入参从 true 变为 false 可以很容易的测试出来。
+这种情况下，\acode{getObject()} 将返回一个指向 \acode{Base} 对象的 \acode{Base} 指针。
+这时尝试 dynamic\_cast 转为 \acode{Derived} 将会失败，因为转换是不可能的。
+
+如果 dynamic\_cast 失败了，装换的结果会是一个空指针。
+
+因为没有对结果进行空指针检查，访问 \acode{d->getName()} 时将会对空指针进行解引用，
+从而导致未定义行为（可能是程序崩溃）。
+
+为了让程序安全，可以确保 dynamic\_cast 的结果是真的成功：
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+  Base* b{ getObject(true) };
+
+  Derived* d{ dynamic_cast<Derived*>(b) }; // 使用动态转型转换 Base 指针成为 Derived 指针
+
+  if (d) // 确保 d 非空
+    std::cout << "The name of the Derived is: " << d->getName() << '\n';
+
+  delete b;
+
+  return 0;
+}
+\end{lstlisting}
+
+规则：总是确保动态转型之后进行空指针检查。
+
+注意因为 dynamic\_cast 在运行时做了一些连贯性检测（用来确保可以进行转换），
+使用 dynamic\_cast 会带来性能下降的惩罚。
+
+同时注意有以下几种情况使用 dynamic\_cast 进行向下转型不能工作：
+
+\begin{enumerate}
+  \item 带有 protected 或 private 的继承
+  \item 没有声明或者继承任何虚函数的类（因为没有虚表）
+  \item 一些特定的情况涉及了虚基类（详见\href{https://learn.microsoft.com/en-us/cpp/cpp/dynamic-cast-operator?redirectedfrom=MSDN&view=msvc-170}{这里}）
+\end{enumerate}
+
+\subsubsection*{通过 static\_cast 进行向下转型}
+
+事实上向下转型同样也可以通过 static\_cast 完成。
+这里主要的区别是 static\_cast 没有运行时检查来确保转型是否有意义。
+这就让 static\_cast 更快了，但是也更危险了。
+如果转换一个 \acode{Base*} 成为 \acode{Derived*}，
+可以“成功”即使 \acode{Base} 指针并没有指向 \acode{Derived} 对象。
+当尝试访问 \acode{Derived} 指针时将会导致未定义行为（因为实际上指向的是 \acode{Base} 对象）。
+
+如果对于向下转型的指针完全有把握成功，那么使用 static\_cast 是可以的。
+其中一种保证指向的对象类型的方式，是使用虚函数。这里是一个方法（并不是那么好）：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <string>
+
+// Class 标识符
+enum class ClassID
+{
+  base,
+  derived
+  // 其它可以之后在这里添加
+};
+
+class Base
+{
+protected:
+int m_value{};
+
+public:
+  Base(int value)
+    : m_value{value}
+  {
+  }
+
+  virtual ~Base() = default;
+  virtual ClassID getClassID() const { return ClassID::base; }
+};
+
+class Derived : public Base
+{
+protected:
+  std::string m_name{};
+
+public:
+  Derived(int value, const std::string& name)
+    : Base{value}, m_name{name}
+  {
+  }
+
+  const std::string& getName() const { return m_name; }
+  virtual ClassID getClassID() const { return ClassID::derived; }
+};
+
+Base* getObject(bool bReturnDerived)
+{
+  if (bReturnDerived)
+    return new Derived{1, "Apple"};
+  else
+    return new Base{2};
+}
+
+int main()
+{
+  Base* b{ getObject(true) };
+
+  if (b->getClassID() == ClassID::derived)
+  {
+    // 已经证明了 b 是指向 Derived 对象的，因此这里总是会成功
+    Derived* d{ static_cast<Derived*>(b) };
+    std::cout << "The name of the Derived is: " << d->getName() << '\n';
+  }
+
+  delete b;
+
+  return 0;
+}
+\end{lstlisting}
+
+但是如果通过这些麻烦的步骤来实现（花费调用虚函数的成本，以及处理整个过程），
+或许直接使用 dynamic\_cast 更好。
+
+\subsubsection*{dynamic\_cast 与引用}
+
+尽管上述所有的例子展示的都是指针的动态转型（也是最常见的），dynamic\_cast 同样也可以作用于引用。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <string>
+
+class Base
+{
+protected:
+  int m_value;
+
+public:
+  Base(int value)
+    : m_value{value}
+  {
+  }
+
+  virtual ~Base() = default;
+};
+
+class Derived : public Base
+{
+protected:
+  std::string m_name;
+
+public:
+  Derived(int value, const std::string& name)
+    : Base{value}, m_name{name}
+  {
+  }
+
+  const std::string& getName() const { return m_name; }
+};
+
+int main()
+{
+  Derived apple{1, "Apple"};
+  Base& b{ apple };
+  Derived& d{ dynamic_cast<Derived&>(b) }; // 动态转型，使用引用而不是指针
+
+  std::cout << "The name of the Derived is: " << d.getName() << '\n'; // 可以通过 d 来访问 Derived::getName
+
+  return 0;
+}
+\end{lstlisting}
+
+由于 C++ 并没有一个“空引用”，失败的时候 dynamic\_cast 并不能返回一个空引用。
+反而如果 dynamic\_cast 对于引用失败时，\acode{std::bad_cast} 的异常会被抛出。
+
+\subsubsection*{dynamic\_cast vs static\_cast}
+
+新手程序员有时会迷惑何时使用 dynamic\_cast 或是 static\_cast。
+答案非常简单：使用 static\_cast 除非使用向下转型，这种情况下 dynamic\_cast 会是更好的选择。
+然而同样也需要考虑避免使用转型，而是去使用虚函数。
+
+\subsubsection*{向下转型 vs 虚函数}
+
+有一些开发者认为 dynamic\_cast 是邪恶的，并且是坏的类设计。相反这些程序员会建议使用虚函数。
+
+通常来说，使用虚函数*应该*是比向下转型更为推荐的。然而有时候向下转型却是更好的选择：
+
+\begin{itemize}
+  \item 当不可以修改基类添加一个虚函数时（例如因为基类是标准库的一部分）
+  \item 当需要访问一些只有派生类的东西（例如访问仅存在于派生类中的函数）
+  \item 当添加虚函数给基类没有任何意义时（例如没有合适的值作为基类的返回）。
+        这里使用存虚函数可能是一个选项，只要不需要实例化基类。
+\end{itemize}
+
+\subsubsection*{dynamic\_cast 与 RTTI 的警告}
+
+运行时类型信息（Run-time type information (RTTI)）是 C++ 的一个特征，
+用来在运行时暴露对象的数据类型。这个能力是由 dynamic\_cast 完成的。
+因为 RTTI 拥有很大的性能成本，一些编译器允许用户关闭 RTTI 来进行优化。
+无需多言，如果这么做，dynamic\_cast 不能正确工作。
+
+\end{document}

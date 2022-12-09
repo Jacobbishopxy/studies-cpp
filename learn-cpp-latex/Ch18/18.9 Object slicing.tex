@@ -1,0 +1,303 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{9}{Object slicing}
+
+现在来看之前的案例：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class Base
+{
+protected:
+    int m_value{};
+
+public:
+    Base(int value)
+        : m_value{ value }
+    {
+    }
+
+    virtual const char* getName() const { return "Base"; }
+    int getValue() const { return m_value; }
+};
+
+class Derived: public Base
+{
+public:
+    Derived(int value)
+        : Base{ value }
+    {
+    }
+
+    const char* getName() const override { return "Derived"; }
+};
+
+int main()
+{
+    Derived derived{ 5 };
+    std::cout << "derived is a " << derived.getName() << " and has value " << derived.getValue() << '\n';
+
+    Base& ref{ derived };
+    std::cout << "ref is a " << ref.getName() << " and has value " << ref.getValue() << '\n';
+
+    Base* ptr{ &derived };
+    std::cout << "ptr is a " << ptr->getName() << " and has value " << ptr->getValue() << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+上述例子中，\acode{derived} 的 \acode{ref} 引用与 \acode{ptr} 指针，
+拥有一个 \acode{Base} 部分，以及一个 \acode{Derived} 部分。
+因为 \acode{ref} 与 \acode{ptr} 的类型都是 \acode{Base}，
+它们只能看到 \acode{derived} 的 \acode{Base} 部分 --
+而 \acode{Derived} 部分仍然存在，就是不能简单的通过 \acode{ref} 与 \acode{ptr} 来看见。
+然而通过虚函数的使用，我们可以访问最-派生的函数版本。
+因此，上述程序打印：
+
+\begin{lstlisting}
+derived is a Derived and has value 5
+ref is a Derived and has value 5
+ptr is a Derived and has value 5
+\end{lstlisting}
+
+那么如果不设置 \acode{Base} 引用或者指针给 \acode{Derived} 对象，
+而是简单的*赋值*一个 \acode{Derived} 对象给 \acode{Base} 对象呢？
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    Derived derived{ 5 };
+    Base base{ derived }; // 这里会发生什么？
+    std::cout << "base is a " << base.getName() << " and has value " << base.getValue() << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+注意 \acode{derived} 拥有 \acode{Base} 部分以及 \acode{Derived} 部分。
+当赋值一个 \acode{Derived} 对象给 \acode{Base} 对象时，只有 \acode{Base} 部分会被拷贝，
+而 \acode{Derived} 部分并没有被拷贝。
+上述例子中，\acode{base} 获取了 \acode{derived} 的 \acode{Base} 部分的拷贝。
+\acode{Derived} 部分实际上是被“切掉了 sliced off”。
+因此，将 \acode{Derived} 类对象赋值给 \acode{Base} 类对象被称为\textbf{对象切片} object slicing（或是简称切片）。
+
+因为变量 \acode{base} 没有 \acode{Derived} 部分，
+因此 \acode{base.getName()} 被解析为 \acode{Base::getName()}。
+
+上述代码打印：
+
+\begin{lstlisting}
+base is a Base and has value 5
+\end{lstlisting}
+
+然而不正确的使用切片可以导致若干不同方向的预想不到的结果。下面来看一下这些情况。
+
+\subsubsection*{切片与函数}
+
+可能会认为上述的例子很蠢。毕竟为什么会有人赋值 \acode{derived} 给 \acode{base} 呢？
+然而切片的发生更可能出现在函数上。
+
+考虑以下函数：
+
+\begin{lstlisting}[language=C++]
+void printName(const Base base) // 注意：base 是值传递而不是引用传递
+{
+    std::cout << "I am a " << base.getName() << '\n';
+}
+\end{lstlisting}
+
+这个函数非常的简单，const 的 \acode{Base} 对象作为入参被值传递。如果像以下这样调用函数：
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    Derived d{ 5 };
+    printName(d); // 啊，并没有察觉这是值传递
+
+    return 0;
+}
+\end{lstlisting}
+
+编写程序的时候很有可能会没有注意 \acode{base} 是一个值入参而不是引用。
+因此，当调用 \acode{printName(d)} 时，
+虽然预期的是 \acode{base.getName()} 调用虚函数最终打印出“I am a Derived”，
+但是实际上并没有。
+
+当然避免该问题的发生也很简单只需要使入参变为引用即可（这也是另一个传递类的引用而不是值的原因）。
+
+\begin{lstlisting}[language=C++]
+void printName(const Base& base) // 注意：base 现在是引用传递
+{
+    std::cout << "I am a " << base.getName() << '\n';
+}
+
+int main()
+{
+    Derived d{ 5 };
+    printName(d);
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{向量切片}
+
+另一个新手程序员可能经常会犯的错误是尝试在 \acode{std::vector} 上实现多态。
+
+\begin{lstlisting}[language=C++]
+#include <vector>
+
+int main()
+{
+  std::vector<Base> v{};
+  v.push_back(Base{ 5 }); // 添加 Base 对象至向量
+  v.push_back(Derived{ 6 }); // 添加 Derived 对象至向量
+
+  // 打印所有向量中的元素
+  for (const auto& element : v)
+    std::cout << "I am a " << element.getName() << " with value " << element.getValue() << '\n';
+
+  return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+I am a Base with value 5
+I am a Base with value 6
+\end{lstlisting}
+
+与之前例子相似，因为 std::vector 声明的类型是 \acode{Base}，当 \acode{Derived(6)} 添加至向量时，其被切片了。
+
+修复这个问题可能有点困难。很多新手程序员会尝试创建一个引用对象的向量，类似于：
+
+\begin{lstlisting}[language=C++]
+std::vector<Base&> v{};
+\end{lstlisting}
+
+然而这并不能编译。向量中的元素必须是可赋值的，而引用并不能被赋值（仅可初始化）。
+
+一种处理的方法是使用指针：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <vector>
+
+int main()
+{
+  std::vector<Base*> v{};
+
+  Base b{ 5 }; // b 与 d 不能是匿名对象
+  Derived d{ 6 };
+
+  v.push_back(&b); // 添加 Base 对象至向量
+  v.push_back(&d); // 添加 Derived 对象至向量
+
+  // 打印所有向量中的元素
+  for (const auto* element : v)
+    std::cout << "I am a " << element->getName() << " with value " << element->getValue() << '\n';
+
+  return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+I am a Base with value 5
+I am a Derived with value 6
+\end{lstlisting}
+
+这就能工作了！其中有一些注意项。
+首先，\acode{nullptr} 现在是一个合法的选项，这有可能并不是期望的。
+其次，需要处理指针语义，这会变得笨拙。
+不过这样的好处是，允许了动态内存分配的可能性，这对于有些对象可能会离开作用域来说很有用。
+
+另一个选项是使用 \acode{std::reference_wrapper}，即一个模仿一个可重新赋值的引用的类：
+
+\begin{lstlisting}[language=C++]
+#include <functional> // std::reference_wrapper
+#include <iostream>
+#include <vector>
+
+class Base
+{
+protected:
+  int m_value{};
+
+public:
+  Base(int value)
+    : m_value{ value }
+  {
+  }
+
+  virtual const char* getName() const { return "Base"; }
+  int getValue() const { return m_value; }
+};
+
+class Derived : public Base
+{
+public:
+  Derived(int value)
+    : Base{ value }
+  {
+  }
+
+  const char* getName() const override { return "Derived"; }
+};
+
+int main()
+{
+  std::vector<std::reference_wrapper<Base>> v{}; // 可重新赋值的 Base 引用的向量
+
+  Base b{ 5 }; // b 与 d 不能是匿名对象
+  Derived d{ 6 };
+
+  v.push_back(b); // 添加 Base 对象至向量
+  v.push_back(d); // 添加 Derived 对象至向量
+
+  // 打印向量中的所有元素
+  // 使用 .get() 从 std::reference_wrapper 中获取元素
+  for (const auto& element : v) // 元素类型为 const std::reference_wrapper<Base>&
+    std::cout << "I am a " << element.get().getName() << " with value " << element.get().getValue() << '\n';
+
+return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{Frankenobject}
+
+上述例子中讲述的都是由于派生类被切片了所带来的错误结果。
+现在来看一下另一个仍然在派生类中存在的危险案例！
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    Derived d1{ 5 };
+    Derived d2{ 6 };
+    Base& b{ d2 };
+
+    b = d1; // 这一行是有问题的
+
+    return 0;
+}
+\end{lstlisting}
+
+前三行非常的直接：创建两个 \acode{Derived} 对象，对第二个对象设置 \acode{Base} 引用。
+
+第四行出了问题。因为 \acode{b} 指向 \acode{d2}，又赋值了 \acode{d1} 给 \acode{b}，有人可能会认为 \acode{d1} 将会给 \acode{d2} 一个拷贝 -- 如果 \acode{b} 是 \acode{Derived} 的情况并不是这样。如果 \acode{b} 是 \acode{Base}，C++ 中的操作符 \acode{=} 默认不会提供类的虚化。因此，\acode{d1} 只用 \acode{Base} 部分被拷贝进了 \acode{d2}。
+
+结果就是 \acode{d2} 有了 \acode{d1} 的 \acode{Base} 部分以及 \acode{d2} 的 \acode{Derived} 部分。在这个特定的例子中，这并没有问题（因为 \acode{Derived} 类自身没有数据），但是大多数情况下，用户创建了一个 Frankenobject -- 由若干对象的不同部分组成的对象。更坏的是，这没有简单的办法来阻止这样的事情发生。
+
+\subsubsection*{总结}
+
+尽管 C++ 支持通过对象切片的方式将派生对象赋值给基类对象，
+通常而言，这并不能带来什么好处而都是麻烦，因此应该尽量避免切片。
+请确保所有函数入参是引用（或者指针），同时在处理派生类时尽量避免任何值传递类型。
+
+\end{document}
