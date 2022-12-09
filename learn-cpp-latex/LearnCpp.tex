@@ -4,6 +4,7 @@
 \usepackage[a4paper, total={6in, 8in}]{geometry}
 \usepackage{lmodern}
 \usepackage{graphicx}
+\graphicspath{\subfix{./images/}}
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{amsfonts}
@@ -11,7 +12,6 @@
 \usepackage{tabularx}
 \usepackage{multirow}
 
-\graphicspath{\subfix{./images/}}
 
 \usepackage{blindtext}
 \usepackage{subfiles} % Best loaded last in the preamble
@@ -62,6 +62,7 @@
 \subfile{Ch02/2.7 Forward declarations and definitions}
 \subfile{Ch02/2.9 Naming collisions and an introduction to namespaces}
 \subfile{Ch02/2.10 Introduction to the preprocessor}
+\newpage % 为了使 2.11 图片正常显示
 \subfile{Ch02/2.11 Header files}
 \subfile{Ch02/2.12 Header guards}
 \subfile{Ch02/2.13 How to design your first programs}

@@ -8,12 +8,13 @@
 
 \subsubsection*{使用标准库的头文件}
 
-\begin{figure}[bh]
-   \centering
-   \includegraphics[width=10cm]{\subfix{../images/IncludeLibrary}}
+如图 1 所示：
 
-   \label{fig:IncludeLibrary}
-   \caption{IncludeLibrary}
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=10cm]{\subfix{../images/IncludeLibrary}}
+  \label{fig:IncludeLibrary}
+  \caption{IncludeLibrary}
 \end{figure}
 
 \subsubsection*{编写自定义的头文件}
@@ -44,8 +45,8 @@ int main()
 编写头文件非常简单，因为只包含了两部分：
 
 \begin{enumerate}
-   \item \textit{头文件保护符}，下一章将会讨论。
-   \item 头文件的实际内容，其应该为前置定义的标识符，使得其他文件可以看到。
+  \item \textit{头文件保护符}，下一章将会讨论。
+  \item 头文件的实际内容，其应该为前置定义的标识符，使得其他文件可以看到。
 \end{enumerate}
 
 项目中添加一个头文件类似于添加一个源文件（2.8 的多文件程序将提到）。
@@ -89,12 +90,12 @@ int add(int x, int y)
 因为 \textit{add.h} 包含了函数 \textit{add} 的前向声明，前向声明将会被拷贝到 \textit{main.cpp}。
 最终的结果是程序的功能与手动添加前向声明在 \textit{main.cpp} 文件顶部的效果一直。
 
-\begin{figure}[bh]
-   \centering
-   \includegraphics[width=10cm]{\subfix{../images/IncludeHeader}}
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=8cm]{\subfix{../images/IncludeHeader}}
 
-   \label{fig:IncludeHeader}
-   \caption{IncludeHeader}
+  \label{fig:IncludeHeader}
+  \caption{IncludeHeader}
 \end{figure}
 
 \subsubsection*{源文件应该包含其配对的头文件}
@@ -122,10 +123,10 @@ int add(int x, int y)
 为了最大化编译器发现缺失的 includes，请按照以下顺序进行 \#includes：
 
 \begin{enumerate}
-   \item 匹配的头文件
-   \item 本项目中其他的头文件
-   \item 第三方库的头文件
-   \item 标准库的头文件
+  \item 匹配的头文件
+  \item 本项目中其他的头文件
+  \item 第三方库的头文件
+  \item 标准库的头文件
 \end{enumerate}
 
 其中每个组的头文件根据字母顺序进行排序。
@@ -135,16 +136,16 @@ int add(int x, int y)
 其他的最佳实践：
 
 \begin{itemize}
-   \item 总是包含头文件保护符（详见下一章节）
-   \item 不要在头文件中定义变量以及函数（全局变量除外 -- 之后的章节将会覆盖）
-   \item 头文件和与之关联的源文件拥有一样的名字（例如 grades.h 用于匹配 grades.cpp）
-   \item 每个头文件需要有特定的任务，并且越独立越好。
-         例如用户讲所有关联 A 功能的声明放入 A.h 中，所有关联 B 功能的声明放入 B.h 中。
-         这样用户只需要关心 A 时 include A.h，而不会获得任何关联 B 的事务
-   \item 注意头文件需要显式的在代码文件中 include 所需要的功能
-   \item 所有用户编写的头文件应该可以自身被编译（应该 \#include 所有其所需的依赖）
-   \item 仅 \#include 所需要的
-   \item 不要 \#include .cpp 文件
+  \item 总是包含头文件保护符（详见下一章节）
+  \item 不要在头文件中定义变量以及函数（全局变量除外 -- 之后的章节将会覆盖）
+  \item 头文件和与之关联的源文件拥有一样的名字（例如 grades.h 用于匹配 grades.cpp）
+  \item 每个头文件需要有特定的任务，并且越独立越好。
+        例如用户讲所有关联 A 功能的声明放入 A.h 中，所有关联 B 功能的声明放入 B.h 中。
+        这样用户只需要关心 A 时 include A.h，而不会获得任何关联 B 的事务
+  \item 注意头文件需要显式的在代码文件中 include 所需要的功能
+  \item 所有用户编写的头文件应该可以自身被编译（应该 \#include 所有其所需的依赖）
+  \item 仅 \#include 所需要的
+  \item 不要 \#include .cpp 文件
 \end{itemize}
 
 \end{document}
