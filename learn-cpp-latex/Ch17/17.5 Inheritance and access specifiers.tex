@@ -1,0 +1,269 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{5}{Inheritance and access specifiers}
+
+\subsubsection*{protected 访问限定符}
+
+C++ 有第三种暂未被提及的访问限定符，因为其仅在继承的上下文中有用。
+\textbf{protected} 访问限定符运允许类成员属于，友元，以及派生类访问成员，
+而 protected 成员不能被类的外部访问。
+
+\begin{lstlisting}[language=C++]
+class Base
+{
+public:
+    int m_public {};    // 可以被任何人访问
+protected:
+    int m_protected {}; // 可以被 Base 成员，友元，以及派生类访问
+private:
+    int m_private {};   // 仅可被 Base 成员以及友元（派生类访问不了）访问
+};
+
+class Derived: public Base
+{
+public:
+    Derived()
+    {
+        m_public = 1;     // 允许
+        m_protected = 2;  // 允许
+        m_private = 3;    // 不允许
+    }
+};
+
+int main()
+{
+    Base base;
+    base.m_public = 1;    // 允许
+    base.m_protected = 2; // 不允许
+    base.m_private = 3;   // 不允许
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{何时使用 protected 访问限定符}
+
+基类带有 protected 属性的成员可以在派生类中直接访问。
+这就意味着之后任何关于该成员的修改（类型，值的含义，等等）需要同时去修改基类以及派生类。
+
+隐藏使用 protected 访问限定符在开发者（或组）编写自定义类与派生类时很有用。
+这样的话修改基类的实现，并更新作为结果的派生类时，可以自主的进行更新（不会消耗大量时间，毕竟派生类的数量是有限的）。
+
+将成员设为私有则意味着公共与派生类都不能直接访问基类。
+这么做隔离了公共与派生类进行修改，并确保了变体能够正确的被维护。
+然而这也意味着可能需要大量 public（或 protected）结构来支持所有用于公共或派生类操作的函数，
+它们都有各自的构建，测试以及维护成本。
+
+通常来说，尽可能的让成员私有，仅当计划需要有派生类的构建与维护接口，
+而私有成员的成本又太高时，才使用 protected。
+
+最佳实践：更加推荐私有成员而不是 protected 成员。
+
+\subsubsection*{不同类型的继承，以及它们在访问时的影响}
+
+\begin{lstlisting}[language=C++]
+// Inherit from Base publicly
+class Pub: public Base
+{
+};
+
+// Inherit from Base protectedly
+class Pro: protected Base
+{
+};
+
+// Inherit from Base privately
+class Pri: private Base
+{
+};
+
+class Def: Base // Defaults to private inheritance
+{
+};
+\end{lstlisting}
+
+如果不选择继承类型，C++ 默认使用 private 继承（正如成员也是默认为 private 访问）。
+
+这就带来了 9 种组合：3 种成员访问限定符（public，private，protected），
+以及 3 种继承类型（public，private，protected）。
+
+\subsubsection*{Public 继承}
+
+Public 继承是继承中最为广泛使用的。实际上，通常很难看到其他类型的继承。
+
+\begin{center}
+    \begin{tiny}
+        \begin{tabularx}{ 1\textwidth}{
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X |
+            }
+            \hline
+            Access specifier in base class & Access specifier when inherited publicly \\
+            \hline
+            Public                         & Public                                   \\
+            Protected                      & Protected                                \\
+            Private                        & Inaccessible                             \\
+            \hline
+        \end{tabularx}
+    \end{tiny}
+\end{center}
+
+\begin{lstlisting}[language=C++]
+class Base
+{
+public:
+    int m_public {};
+protected:
+    int m_protected {};
+private:
+    int m_private {};
+};
+
+class Pub: public Base // note: public inheritance
+{
+    // Public inheritance means:
+    // Public inherited members stay public (so m_public is treated as public)
+    // Protected inherited members stay protected (so m_protected is treated as protected)
+    // Private inherited members stay inaccessible (so m_private is inaccessible)
+public:
+    Pub()
+    {
+        m_public = 1; // okay: m_public was inherited as public
+        m_protected = 2; // okay: m_protected was inherited as protected
+        m_private = 3; // not okay: m_private is inaccessible from derived class
+    }
+};
+
+int main()
+{
+    // Outside access uses the access specifiers of the class being accessed.
+    Base base;
+    base.m_public = 1; // okay: m_public is public in Base
+    base.m_protected = 2; // not okay: m_protected is protected in Base
+    base.m_private = 3; // not okay: m_private is private in Base
+
+    Pub pub;
+    pub.m_public = 1; // okay: m_public is public in Pub
+    pub.m_protected = 2; // not okay: m_protected is protected in Pub
+    pub.m_private = 3; // not okay: m_private is inaccessible in Pub
+
+    return 0;
+}
+\end{lstlisting}
+
+最佳实践：使用 public 继承除非有非常特殊的原因。
+
+\subsubsection*{Protected 继承}
+
+Protected 继承是最少见的一种继承方式。
+可以说是几乎不怎么使用它，除非是特别的案例。
+通过 protected 继承，public 与 protected 成员都变为 protected，同时 private 保持不可访问。
+
+\begin{center}
+    \begin{tiny}
+        \begin{tabularx}{ 1\textwidth}{
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X |
+            }
+            \hline
+            Access specifier in base class & Access specifier when inherited protectedly \\
+            \hline
+            Public                         & Protected                                   \\
+            Protected                      & Protected                                   \\
+            Private                        & Inaccessible                                \\
+            \hline
+        \end{tabularx}
+    \end{tiny}
+\end{center}
+
+\subsubsection*{Private 继承}
+
+通过 private 继承，所有基类的成员都被继承为私有。
+
+注意着并不影响派生类访问基类成员！这仅仅影响的是派生来外部想要访问这些基类成员的代码。
+
+\begin{lstlisting}[language=C++]
+class Base
+{
+public:
+    int m_public {};
+protected:
+    int m_protected {};
+private:
+    int m_private {};
+};
+
+class Pri: private Base // note: private inheritance
+{
+    // Private inheritance means:
+    // Public inherited members become private (so m_public is treated as private)
+    // Protected inherited members become private (so m_protected is treated as private)
+    // Private inherited members stay inaccessible (so m_private is inaccessible)
+public:
+    Pri()
+    {
+        m_public = 1; // okay: m_public is now private in Pri
+        m_protected = 2; // okay: m_protected is now private in Pri
+        m_private = 3; // not okay: derived classes can't access private members in the base class
+    }
+};
+
+int main()
+{
+    // Outside access uses the access specifiers of the class being accessed.
+    // In this case, the access specifiers of base.
+    Base base;
+    base.m_public = 1; // okay: m_public is public in Base
+    base.m_protected = 2; // not okay: m_protected is protected in Base
+    base.m_private = 3; // not okay: m_private is private in Base
+
+    Pri pri;
+    pri.m_public = 1; // not okay: m_public is now private in Pri
+    pri.m_protected = 2; // not okay: m_protected is now private in Pri
+    pri.m_private = 3; // not okay: m_private is inaccessible in Pri
+
+    return 0;
+}
+\end{lstlisting}
+
+\begin{center}
+    \begin{tiny}
+        \begin{tabularx}{ 1\textwidth}{
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X |
+            }
+            \hline
+            Access specifier in base class & Access specifier when inherited privately \\
+            \hline
+            Public                         & Private                                   \\
+            Protected                      & Private                                   \\
+            Private                        & Inaccessible                              \\
+            \hline
+        \end{tabularx}
+    \end{tiny}
+\end{center}
+
+\subsubsection*{总结}
+
+\begin{center}
+    \begin{tiny}
+        \begin{tabularx}{ 1\textwidth}{
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X |
+            }
+            \hline
+            Access specifier in base class & Access specifier when inherited publicly & Access specifier when inherited privately & Access specifier when inherited protectedly \\
+            \hline
+            Public                         & Public                                   & Private                                   & Protected                                   \\
+            Protected                      & Protected                                & Private                                   & Protected                                   \\
+            Private                        & Inaccessible                             & Inaccessible                              & Inaccessible                                \\
+            \hline
+        \end{tabularx}
+    \end{tiny}
+\end{center}
+
+\end{document}

@@ -1,0 +1,222 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{4}{Constructors and initialization of derived classes}
+
+继续使用上一章的例子。
+
+\begin{lstlisting}[language=C++]
+class Base
+{
+public:
+    int m_id {};
+
+    Base(int id=0)
+        : m_id{ id }
+    {
+    }
+
+    int getId() const { return m_id; }
+};
+
+class Derived: public Base
+{
+public:
+    double m_cost {};
+
+    Derived(double cost=0.0)
+        : m_cost{ cost }
+    {
+    }
+
+    double getCost() const { return m_cost; }
+};
+\end{lstlisting}
+
+不使用派生类时，构造函数只需要考虑自身的成员：
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    Base base{ 5 }; // 使用 Base(int) 构造函数
+
+    return 0;
+}
+\end{lstlisting}
+
+实例化时的真实步骤：
+
+\begin{enumerate}
+    \item \acode{base} 的内存被分配
+    \item 合适的 \acode{Base} 构造函数被调用
+    \item 成员初始化列表初始化变量
+    \item 构造函数的函数体被执行
+    \item 调用者拿回控制权
+\end{enumerate}
+
+对于派生类的实例化过程而言，也是非常直接的：
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    Derived derived{ 1.3 }; // 使用 Derived(double) 构造函数
+
+    return 0;
+}
+\end{lstlisting}
+
+\begin{enumerate}
+    \item 派生类的内存被分配（足够同时用于 \acode{Base} 与 \acode{Derived} 部分）
+    \item 合适的 \acode{Derived} 构造函数被调用
+    \item \acode{Base} 对象首先使用合适的 \acode{Base} 构造函数被构建。
+          如果没有合适的，则默认构造函数被调用
+    \item 成员初始化列表初始化变量
+    \item 构造函数的函数体被执行
+    \item 调用者拿回控制权
+\end{enumerate}
+
+\subsubsection*{初始化基类成员}
+
+\begin{lstlisting}[language=C++]
+class Derived: public Base
+{
+public:
+    double m_cost {};
+
+    Derived(double cost=0.0, int id=0)
+        : Base{ id } // 调用 Base(int) 构造函数并传入 id 值！
+        , m_cost{ cost }
+    {
+    }
+
+    double getCost() const { return m_cost; }
+};
+\end{lstlisting}
+
+\subsubsection*{另一个例子}
+
+优化之前章节的例子：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <string>
+#include <string_view>
+
+class Person
+{
+private:
+    std::string m_name;
+    int m_age {};
+
+public:
+    Person(const std::string_view name = "", int age = 0)
+        : m_name{ name }, m_age{ age }
+    {
+    }
+
+    const std::string& getName() const { return m_name; }
+    int getAge() const { return m_age; }
+
+};
+// BaseballPlayer 公开继承 Person
+class BaseballPlayer : public Person
+{
+private:
+    double m_battingAverage {};
+    int m_homeRuns {};
+
+public:
+    BaseballPlayer(const std::string_view name = "", int age = 0,
+        double battingAverage = 0.0, int homeRuns = 0)
+        : Person{ name, age } // 调用 Person(const std::string_view, int) 来初始化这些字段
+        , m_battingAverage{ battingAverage }, m_homeRuns{ homeRuns }
+    {
+    }
+
+    double getBattingAverage() const { return m_battingAverage; }
+    int getHomeRuns() const { return m_homeRuns; }
+};
+
+int main()
+{
+    BaseballPlayer pedro{ "Pedro Cerrano", 32, 0.342, 42 };
+
+    std::cout << pedro.getName() << '\n';
+    std::cout << pedro.getAge() << '\n';
+    std::cout << pedro.getBattingAverage() << '\n';
+    std::cout << pedro.getHomeRuns() << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+Pedro Cerrano
+32
+0.342
+42
+\end{lstlisting}
+
+\subsubsection*{继承链}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class A
+{
+public:
+    A(int a)
+    {
+        std::cout << "A: " << a << '\n';
+    }
+};
+
+class B: public A
+{
+public:
+    B(int a, double b)
+    : A{ a }
+    {
+        std::cout << "B: " << b << '\n';
+    }
+};
+
+class C: public B
+{
+public:
+    C(int a, double b, char c)
+    : B{ a, b }
+    {
+        std::cout << "C: " << c << '\n';
+    }
+};
+
+int main()
+{
+    C c{ 5, 4.3, 'R' };
+
+    return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+A: 5
+B: 4.3
+C: R
+\end{lstlisting}
+
+值得注意的是构造函数仅可以调用它们的父类构造函数。
+也就是说 \acode{C} 的构造函数不能直接调用或者传递参数给 \acode{A} 的构造函数。
+
+\subsubsection*{析构函数}
+
+当一个派生类被销毁，每个析构函数也会与构造函数\textit{相反}的顺序被调用。
+上述例子中 \acode{c} 被销毁，\acode{C} 的析构函数先被调用，
+然后是 \acode{B} 的析构函数，最后是 \acode{A} 的析构函数。
+
+\end{document}

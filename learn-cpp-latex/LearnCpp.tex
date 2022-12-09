@@ -1,20 +1,29 @@
 \PassOptionsToPackage{quiet}{fontspec}
 \documentclass[UTF8]{ctexart}
 
+% 页面大小、宽距等
 \usepackage[a4paper, total={6in, 8in}]{geometry}
+% 字体
 \usepackage{lmodern}
-\usepackage{graphicx}
-\graphicspath{\subfix{./images/}}
-\usepackage{listings}
-\usepackage{xcolor}
+% 字体
 \usepackage{amsfonts}
+% 字体颜色
+\usepackage{xcolor}
+% 图形插入
+\usepackage{graphicx}
+% 引入图片文件夹
+\graphicspath{\subfix{./images/}}
+% 代码引用
+\usepackage{listings}
+% 外部链接
 \usepackage{hyperref}
+% 表格
 \usepackage{tabularx}
+% 表格合并行
 \usepackage{multirow}
+% 多文件处理（放置在所有依赖的末尾）
+\usepackage{subfiles}
 
-
-\usepackage{blindtext}
-\usepackage{subfiles} % Best loaded last in the preamble
 
 \title{Learn C++}
 \author{Jacob Bishop}
@@ -239,9 +248,14 @@
 
 \section{Inheritance}
 
-% \subfile{Ch17/}
-% \subfile{Ch17/}
-% \subfile{Ch17/}
+\subfile{Ch17/17.2 Basic inheritance in C++}
+\subfile{Ch17/17.3 Order of construction of derived classes}
+\subfile{Ch17/17.4 Constructors and initialization of derived classes}
+\subfile{Ch17/17.5 Inheritance and access specifiers}
+\subfile{Ch17/17.6 Adding new functionality to a derived class}
+\subfile{Ch17/17.7 Calling inherited functions and overriding behavior}
+\subfile{Ch17/17.8 Hiding inherited functionality}
+\subfile{Ch17/17.9 Multiple inheritance}
 
 \newpage
 
