@@ -1,0 +1,220 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{7}{Function try blocks}
+
+try 以及 catch blocks 可以应付大多数情况，但是有一种特殊的情况不适用。考虑下面例子：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class A
+{
+private:
+  int m_x;
+public:
+  A(int x) : m_x{x}
+  {
+    if (x <= 0)
+      throw 1; // 这里抛出异常
+  }
+};
+
+class B : public A
+{
+public:
+  B(int x) : A{x}
+  {
+    // 如果 A 的创建失败了会发生什么，以及该如何应对？
+  }
+};
+
+int main()
+{
+  try
+  {
+    B b{0};
+  }
+  catch (int)
+  {
+    std::cout << "Oops\n";
+  }
+}
+\end{lstlisting}
+
+\subsubsection*{函数 try blocks}
+
+函数 try blocks 是设计用来对整个函数体建立异常而不是一个代码块，其语法稍微有点难以描述，且看下面例子：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class A
+{
+private:
+  int m_x;
+public:
+  A(int x) : m_x{x}
+  {
+    if (x <= 0)
+      throw 1; // 这里抛出异常
+  }
+};
+
+class B : public A
+{
+public:
+  B(int x) try : A{x} // 注意这里额外的 try 关键字
+  {
+  }
+  catch (...) // 注意这与函数体本身处于同级
+  {
+    // 成员初始化列表的异常或是构造函数体在这里被捕获
+
+    std::cerr << "Exception caught\n";
+
+    throw; // 重新抛出现有异常
+  }
+};
+
+int main()
+{
+  try
+  {
+    B b{0};
+  }
+  catch (int)
+  {
+    std::cout << "Oops\n";
+  }
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+Exception caught
+Oops
+\end{lstlisting}
+
+首先，注意额外的“try”关键字位于成员初始化列表之前。
+这代表着其所有的后续（直到函数结束）应该被视为在 try block 之内。
+
+其次，注意关联的 catch block 是位于整个函数相同缩进的级别。
+任何在 try 关键字与函数结尾中抛出的异常都应该在这里被捕获。
+
+当上面的程序运行时，变量 \acode{b} 开始构造，调用 \acode{B} 的构造函数（使用了函数 try）。
+\acode{B} 的构造函数调用 \acode{A} 的构造函数，接着抛出一个异常。
+因为 \acode{A} 的构造函数并未处理这个异常，异常传递给栈上的 \acode{B} 构造函数，
+其被 \acode{B} 构造函数同等级所捕获。
+catch block 打印“Exception caught”，接着重新抛出当前异常给栈，
+即被 \acode{main()} 中的 catch block 捕获，并打印“Oops”。
+
+\subsubsection*{函数 catch blocks 的限制}
+
+对于常规的 catch block（函数内部）而言，有三种选项：
+可以抛出一个新的异常，重新抛出当前异常，或者是解决该异常（通过一个返回声明，或者使控制触及 catch block 底部）。
+
+对于一个构造函数而言，函数等级的 catch block 必须抛出一个新异常或者抛出已有异常 --
+也就是不允许解决异常！返回声明同样也不被运行，同时触及 catch block 底部将隐式的重新抛出异常。
+
+对于一个结构函数而言，函数等级的 catch block 可以抛出异常，重新抛出异常，
+或者是通过一个返回声明解决当前异常。触及 catch block 的底部将会隐式的重新抛出异常。
+
+对于其他函数而言，函数等级的 catch block 可以抛出异常，
+重新抛出异常，或者是通过一个返回声明解决当前异常。
+触及 catch block 的底部将会隐式的解析非值（\acode{void}）返回的函数，
+以及对值返回的函数产生未定义行为！
+
+下面的表格总结了限制与函数等级 catch blocks 的行为：
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Function type                & Can resolve exceptions via return statement & Behavior at end of catch block \\
+      Constructor                  & No, must throw or rethrow                   & Implicit rethrow               \\
+      Destructor                   & Yes                                         & Implicit rethrow               \\
+      Non-value returning function & Yes                                         & Resolve exception              \\
+      Value-returning function     & Yes                                         & Undefined behavior             \\
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+由于在 catch block 结尾的不同行为依赖于函数类型（包括值返回函数的未定义行为），
+因此推荐永远不要让控制触及 catch block 的结尾，并总是显示抛出异常，重新抛出异常或者是返回。
+
+最佳实践：应当避免函数等级的 catch block 触及结尾，而是显示的抛出异常，重新抛出异常或者是返回。
+
+\subsubsection*{函数 try blocks 可以捕获基类以及当前类异常}
+
+上面的例子中，如果 \acode{A} 或 \acode{B} 构造函数抛出异常，
+则会被 \acode{B} 的构造函数的 try block 所捕获。
+
+下面代码从 \acode{B} 类中抛出异常，而不是从 \acode{A}。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class A
+{
+private:
+  int m_x;
+public:
+  A(int x) : m_x{x}
+  {
+  }
+};
+
+class B : public A
+{
+public:
+  B(int x) try : A{x} // 注意这里额外的 try 关键字
+  {
+    if (x <= 0) // 从 A 中移动到 B
+      throw 1;  // 以及移动改行
+  }
+  catch (...)
+  {
+    std::cerr << "Exception caught\n";
+
+    // 如果异常没有在这里被显式的抛出，当前异常将会被隐式重新抛出
+  }
+};
+
+int main()
+{
+  try
+  {
+    B b{0};
+  }
+  catch (int)
+  {
+    std::cout << "Oops\n";
+  }
+}
+\end{lstlisting}
+
+可以获得相同的输出：
+
+\begin{lstlisting}
+Exception caught
+Oops
+\end{lstlisting}
+
+\subsubsection*{不要使用函数尝试清理资源}
+
+当一个对象的构造函数失败嘞，该类的析构函数并不会被调用。
+因此用户可能倾向使用一个函数 try block 在失败之前清理之前分配过的资源。
+然而指向失败对象的成员被视为未定义行为，因为对象在 catch block 之前就已经“死了”。
+这就意味着不可以在一个类结束后还使用函数 try 来进行清理。
+如果希望在类结束后清理，遵循标准规则来清理类，且抛出异常。
+
+函数 try 主要用于日志失败之前通过传递异常给栈，或者改变抛出异常的类型。
+
+\end{document}

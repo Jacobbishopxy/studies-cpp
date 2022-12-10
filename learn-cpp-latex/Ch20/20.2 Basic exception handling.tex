@@ -1,0 +1,111 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{2}{Basic exception handling}
+
+C++ 中的异常处理是由三个关键字关联工作的：\textit{throw}，\textit{try} 以及 \textit{catch}。
+
+\subsubsection*{抛出异常}
+
+在 C++ 中，一个 \textit{throw} 声明用于发出异常或者错误情况出现了的信号。
+一个异常的出现同样被称为 \textit{raising} 一个异常。例如：
+
+\begin{lstlisting}[language=C++]
+throw -1; // throw a literal integer value
+throw ENUM_INVALID_INDEX; // throw an enum value
+throw "Can not take square root of negative number"; // throw a literal C-style (const char*) string
+throw dX; // throw a double variable that was previously defined
+throw MyException("Fatal Error"); // Throw an object of class MyException
+\end{lstlisting}
+
+每个声明作为一个信号代表某种类型的问题出现了且需要被解决。
+
+\subsubsection*{查看异常}
+
+抛出异常仅是异常处理过程的一部分。
+C++ 中，使用 \textit{try} 关键字来定义一块声明（成为 \textit{try block}），
+检查其中任何代码块中可能抛出异常的地方。
+
+\begin{lstlisting}[language=C++]
+try
+{
+    // Statements that may throw exceptions you want to handle go here
+    throw -1; // here's a trivial throw statement
+}
+\end{lstlisting}
+
+注意 try block 并没有定义如何去处理异常。
+
+\subsubsection*{处理异常}
+
+真实处理异常的地方是在 catch block(s)。
+\textit{catch} 关键字用于定义单个数据类型的异常处理。
+
+\begin{lstlisting}[language=C++]
+catch (int x)
+{
+    // Handle an exception of type int here
+    std::cerr << "We caught an int exception with value" << x << '\n';
+}
+\end{lstlisting}
+
+如果参数不会在 catch block 中用到，则可以被省略：
+
+\begin{lstlisting}[language=C++]
+catch (double) // note: no variable name since we don't use it in the catch block below
+{
+    // Handle exception of type double here
+    std::cerr << "We caught an exception of type double" << '\n';
+}
+\end{lstlisting}
+
+\subsubsection*{throw，try 以及 catch}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <string>
+
+int main()
+{
+    try
+    {
+        // Statements that may throw exceptions you want to handle go here
+        throw -1; // here's a trivial example
+    }
+    catch (int x)
+    {
+        // Any exceptions of type int thrown within the above try block get sent here
+        std::cerr << "We caught an int exception with value: " << x << '\n';
+    }
+    catch (double) // no variable name since we don't use the exception itself in the catch block below
+    {
+        // Any exceptions of type double thrown within the above try block get sent here
+        std::cerr << "We caught an exception of type double" << '\n';
+    }
+    catch (const std::string&) // catch classes by const reference
+    {
+        // Any exceptions of type std::string thrown within the above try block get sent here
+        std::cerr << "We caught an exception of type std::string" << '\n';
+    }
+
+    std::cout << "Continuing on our merry way\n";
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{catch block 通常用来做什么}
+
+如果一个异常被导航到了一个 catch block，它被视为“已处理”即使该 catch block 是空的。
+然而，通常希望的是 catch block 能做一些有用的事情。有三种通常的做法：
+
+首先，可以打印错误（输出到终端或是日志文件）。
+
+其次，可以返回一个值或者错误码给调用者。
+
+第三，可以抛出另一个异常。
+因为 catch block 是在 try block 外部，新的抛出异常并没有被 try block 处理 --
+它会被另一个包围其的 try block 处理。
+
+\end{document}
