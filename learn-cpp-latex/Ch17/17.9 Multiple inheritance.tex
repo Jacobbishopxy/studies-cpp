@@ -14,7 +14,56 @@ C++ 提供了多重继承的能力。\textbf{多重继承} multiple inheritance�
     \caption{PersonTeacher}
 \end{figure}
 
-% [代码](../t_multiple_inheritance/person_employee_teacher.h)
+\begin{lstlisting}[language=C++]
+#include <string>
+#include <string_view>
+
+class Person
+{
+  private:
+  std::string m_name;
+  int m_age{};
+
+  public:
+  Person(std::string_view name, int age)
+      : m_name{name}, m_age{age}
+  {
+  }
+
+  const std::string& getName() const { return m_name; }
+  int getAge() const { return m_age; }
+};
+
+class Employee
+{
+  private:
+  std::string m_employer;
+  double m_wage{};
+
+  public:
+  Employee(std::string_view employer, double wage)
+      : m_employer{employer}, m_wage{wage}
+  {
+  }
+
+  const std::string& getEmployer() const { return m_employer; }
+  double getWage() const { return m_wage; }
+};
+
+// Teacher 公共继承 Person 与 Employee
+class Teacher : public Person, public Employee
+{
+  private:
+  int m_teachesGrade{};
+
+  public:
+  Teacher(std::string_view name, int age, std::string_view employer,
+          double wage, int teachesGrade)
+      : Person{name, age}, Employee{employer, wage}, m_teachesGrade{teachesGrade}
+  {
+  }
+};
+\end{lstlisting}
 
 \subsubsection*{Mixins}
 
@@ -23,7 +72,41 @@ mixin 这个名字意味着类的作用是混合进其它类，而不自己进�
 
 下面代码中，\acode{Box} 与 \acode{Label} 类作为 mixins 用于继承并创建新的 \acode{Button} 类。
 
-% [代码](../t_multiple_inheritance/box_label_button.h)
+\begin{lstlisting}[language=C++]
+#include <string>
+
+struct Point2D
+{
+  int x;
+  int y;
+};
+
+class Box
+{
+  private:
+  Point2D m_topLeft{};
+  Point2D m_bottomRight{};
+
+  public:
+  void setTopLeft(Point2D point) { m_topLeft = point; }
+  void setBottomRight(Point2D point) { m_bottomRight = point; }
+};
+
+class Label
+{
+  private:
+  std::string m_text{};
+  int m_fontSize{};
+
+  public:
+  void setText(const std::string_view str) { m_text = str; }
+  void setFontSize(int fontSize) { m_fontSize = fontSize; }
+};
+
+class Button : public Box, public Label
+{
+};
+\end{lstlisting}
 
 \subsubsection*{进阶}
 
