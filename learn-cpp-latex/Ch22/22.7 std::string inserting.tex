@@ -1,0 +1,112 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{7}{std::string inserting}
+
+插入字符至已有的字符串可以通过 \acode{insert()} 函数实现：
+
+\begin{quotation}
+  \textbf{string\& string::insert(size\_type index, const string\& str)}
+
+  \textbf{string\& string::insert(size\_type index, const char* str)}
+
+  \begin{itemize}
+    \item 俩函数插入字符 str 在字符串的 index 位置
+    \item 俩函数都返回 *this 以便被串联
+    \item 如果 index 无效，俩函数都会抛出 out\_of\_range
+    \item 如果结果超过了字符串最大数量，俩函数都会抛出 length\_error 异常
+    \item C-style 版本中 str 不可为 NULL
+  \end{itemize}
+
+  \begin{lstlisting}[language=C++]
+  string sString("aaaa");
+  cout << sString << endl;
+
+  sString.insert(2, string("bbbb"));
+  cout << sString << endl;
+
+  sString.insert(4, "cccc");
+  cout << sString << endl;
+  \end{lstlisting}
+
+  输出：
+
+  \begin{lstlisting}
+  aaaa
+  aabbbbaa
+  aabbccccbbaa
+  \end{lstlisting}
+\end{quotation}
+
+以下版本的 \acode{insert()} 允许用户在任意位置插入子字符串：
+
+\begin{quotation}
+  \textbf{string\& string::insert(size\_type index, const string\& str, size\_type startindex, size\_type num)}
+
+  \begin{itemize}
+    \item 该函数插入 num 字符的 str，始于 startindex，插入进 string 的 index 位置
+    \item 返回 *this 以便被串联
+    \item 如果 index 或 startindex 超出边界则抛出 out\_of\_range
+    \item 如果结果超出字符串的最大长度则抛出 length\_error 异常
+  \end{itemize}
+
+  \begin{lstlisting}[language=C++]
+  string sString("aaaa");
+
+  const string sInsert("01234567");
+  sString.insert(2, sInsert, 3, 4); // insert substring of sInsert from index [3,7) into sString at index 2
+  cout << sString << endl;
+  \end{lstlisting}
+
+  输出：
+
+  \begin{lstlisting}
+  aa3456aa
+  \end{lstlisting}
+\end{quotation}
+
+另外还有 \acode{insert()} 多次插入同样的字符：
+
+\begin{quotation}
+  \textbf{string\& string::insert(size\_type index, size\_type num, char c)}
+
+  \begin{itemize}
+    \item 插入 num 数量的 c 字符至 index 位置
+    \item 返回 *this 以便被串联
+    \item 如果 index 无效，则抛出 out\_of\_range 异常
+    \item 如果结果超出字符串的最大长度则抛出 length\_error 异常
+  \end{itemize}
+
+  \begin{lstlisting}[language=C++]
+  string sString("aaaa");
+
+  sString.insert(2, 4, 'c');
+  cout << sString << endl;
+  \end{lstlisting}
+
+  输出：
+
+  \begin{lstlisting}
+  aaccccaa
+  \end{lstlisting}
+\end{quotation}
+
+最后还有使用迭代器的三个不同版本的 \acode{insert()}：
+
+\begin{quotation}
+  \textbf{void insert(iterator it, size\_type num, char c)}
+
+  \textbf{iterator insert(iterator it, char c)}
+
+  \textbf{void string::insert(iterator it, InputIterator begin, InputIterator end)}
+
+  \begin{itemize}
+    \item 第一个函数在迭代之前，插入 num 数量的 c 字符
+    \item 第二个函数在迭代之前，插入单个字符 c，并返回插入位置的迭代器
+    \item 第三个函数在迭代之前，在 $\left[begin, end\right)$ 之间插入所有字符
+    \item 如果结果超出字符串最大长度，所有函数抛出 length\_error 异常
+  \end{itemize}
+\end{quotation}
+
+\end{document}

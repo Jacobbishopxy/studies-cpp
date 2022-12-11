@@ -1,0 +1,125 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{3}{std::string length and capacity}
+
+一旦创建了字符串，知道其长度是很有用的。这里就是长度和容量操作符的作用。
+我们也将讨论不同的芳芳来转换 \acode{std::string} 回 C-style 字符串，这样可以使用它们通过期望 char* 类型的字符串函数。
+
+\subsubsection*{字符串长度}
+
+\begin{quotation}
+  \textbf{size\_type string::length() const}
+
+  \textbf{size\_type string::size() const}
+
+  \begin{itemize}
+    \item 这俩函数返回的都是当前字符串中的字符数量，不包含空值终止符。
+  \end{itemize}
+
+  \begin{lstlisting}[language=C++]
+  std::string s { "012345678" };
+  std::cout << s.length() << '\n';
+  \end{lstlisting}
+
+  输出：
+
+  \begin{lstlisting}
+  9
+  \end{lstlisting}
+\end{quotation}
+
+\begin{quotation}
+  \textbf{bool string::empty() const}
+
+  \begin{itemize}
+    \item 如果字符串中无字符则返回 true，反之 false。
+  \end{itemize}
+
+  \begin{lstlisting}[language=C++]
+  std::string string1 { "Not Empty" };
+  std::cout << (string1.empty() ? "true" : "false") << '\n';
+  std::string string2; // empty
+  std::cout << (string2.empty() ? "true" : "false")  << '\n';
+  \end{lstlisting}
+
+  输出：
+
+  \begin{lstlisting}
+  false
+  true
+  \end{lstlisting}
+\end{quotation}
+
+\subsubsection*{字符串容量}
+
+字符串容量反应了其被分配了多少的内存用于存储其内容。该值基于字符串字符为单位测量，不包含空值终止符。
+
+\begin{quotation}
+  \textbf{size\_type string::capacity() const}
+
+  \begin{itemize}
+    \item 返回字符串不需要重新分配内存时的可用于存储字符的数量。
+  \end{itemize}
+
+  \begin{lstlisting}[language=C++]
+  std::string s { "01234567" };
+  std::cout << "Length: " << s.length() << '\n';
+  std::cout << "Capacity: " << s.capacity() << '\n';
+  \end{lstlisting}
+
+  输出：
+
+  \begin{lstlisting}
+  Length: 8
+  Capacity: 15
+  \end{lstlisting}
+\end{quotation}
+
+实际上重新分配是不好的原因如下：
+
+首先，重新分配字符串相对而言比较昂贵。
+新的内存需要被分配，每个字符需要被拷贝到新的内存。
+如果字符串巨大，则会消耗大量的时间，最后旧内存需要被释放。
+如果重新分配很多次，这个过程将显著的减慢程序的运行。
+
+其次，任何时候当一个字符串被重新分配，字符串的内容改成了新的内存地址。
+这意味着该字符串的所有引用，指针，以及迭代器都变为无效！
+
+\textbf{void string::reserve()}
+
+\textbf{void string::reserve(size\_type unSize)}
+
+\begin{itemize}
+  \item 第二种函数为字符串设置了至少 unSize 容量。注意这可能需要重新分配。
+  \item 如果第一种函数被调用，或者第二种函数调用的 unSize 小于当前容量，
+        函数讲尝试缩容来匹配长度。缩容可能会被无视，取决于其实现。
+\end{itemize}
+
+\begin{lstlisting}[language=C++]
+std::string s { "01234567" };
+std::cout << "Length: " << s.length() << '\n';
+std::cout << "Capacity: " << s.capacity() << '\n';
+
+s.reserve(200);
+std::cout << "Length: " << s.length() << '\n';
+std::cout << "Capacity: " << s.capacity() << '\n';
+
+s.reserve();
+std::cout << "Length: " << s.length() << '\n';
+std::cout << "Capacity: " << s.capacity() << '\n';
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+Length: 8
+Capacity: 15
+Length: 8
+Capacity: 207
+Length: 8
+Capacity: 207
+\end{lstlisting}
+
+\end{document}
