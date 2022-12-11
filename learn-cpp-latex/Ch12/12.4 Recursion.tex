@@ -1,0 +1,64 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{4}{Recursion}
+
+C++ 中的\textbf{递归函数} recursive function 是一种调用自身的函数。
+
+\subsubsection*{递归终结条件}
+
+\textbf{递归终结} recursive termination 是当条件达满足时，控制函数停止调用自己。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+void countDown(int count)
+{
+    std::cout << "push " << count << '\n';
+
+    if (count > 1) // 终结条件
+        countDown(count-1);
+
+    std::cout << "pop " << count << '\n';
+}
+
+int main()
+{
+    countDown(5);
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{记忆化算法}
+
+\textbf{记忆化} memoization 缓存所有昂贵函数调用，在当同样输入再次发生时，其结果可以直接被返回。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <vector>
+
+int fibonacci(int count)
+{
+  // 使用 static std::vector 缓存计算结果
+  static std::vector results{ 0, 1 };
+
+  // 如果该结果已被计算过，则直接使用缓存中的结果
+  if (count < static_cast<int>(std::size(results)))
+    return results[count];
+
+  // 否则结算新值并添加至缓存
+  results.push_back(fibonacci(count - 1) + fibonacci(count - 2));
+  return results[count];
+}
+
+int main()
+{
+  for (int count { 0 }; count < 13; ++count)
+    std::cout << fibonacci(count) << ' ';
+
+  return 0;
+}
+\end{lstlisting}
+
+\end{document}

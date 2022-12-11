@@ -1,0 +1,80 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{2}{Basic inheritance in C++}
+
+C++ 中的继承发生在类之间。在一个继承（is-a）的关系中，
+被继承的类被称为\textbf{父类} parent class，\textbf{基类} base class 或者\textbf{超类} superclass，
+而继承的类被称为\textbf{子类} child class，\textbf{派生类} derived class 或是\textbf{子类} subclass。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <string>
+
+class Person
+{
+public:
+    std::string m_name{};
+    int m_age{};
+
+    Person(const std::string& name = "", int age = 0)
+        : m_name{name}, m_age{age}
+    {
+    }
+
+    const std::string& getName() const { return m_name; }
+    int getAge() const { return m_age; }
+
+};
+
+// BaseballPlayer publicly inheriting Person
+class BaseballPlayer : public Person
+{
+public:
+    double m_battingAverage{};
+    int m_homeRuns{};
+
+    BaseballPlayer(double battingAverage = 0.0, int homeRuns = 0)
+       : m_battingAverage{battingAverage}, m_homeRuns{homeRuns}
+    {
+    }
+};
+
+// Employee publicly inherits from Person
+class Employee: public Person
+{
+public:
+    double m_hourlySalary{};
+    long m_employeeID{};
+
+    Employee(double hourlySalary = 0.0, long employeeID = 0)
+        : m_hourlySalary{hourlySalary}, m_employeeID{employeeID}
+    {
+    }
+
+    void printNameAndSalary() const
+    {
+        std::cout << m_name << ": " << m_hourlySalary << '\n';
+    }
+};
+
+int main()
+{
+    // Create a new BaseballPlayer object
+    BaseballPlayer joe{};
+    // Assign it a name (we can do this directly because m_name is public)
+    joe.m_name = "Joe";
+    // Print out the name
+    std::cout << joe.getName() << '\n'; // use the getName() function we've acquired from the Person base class
+
+    Employee frank{20.25, 12345};
+    frank.m_name = "Frank"; // we can do this because m_name is public
+
+    frank.printNameAndSalary();
+
+    return 0;
+}
+\end{lstlisting}
+
+\end{document}

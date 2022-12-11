@@ -1,0 +1,241 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{2}{std::string construction and destruction}
+
+本节将会讲述如何构造 \acode{std::string} 对象，以及如何由数字创建 \acode{std::string}，反之亦然。
+
+\subsubsection*{字符串构造函数}
+
+字符串类拥有很多构造函数，让我们一个一个来看看。
+
+注意： \acode{string::size_type} 解析为 \acode{size_t}，
+由 \acode{sizeof} 操作符返回的结果等同于无符号整数类型。
+\acode{size_t} 的真实大小取决于其环境。本教程中将其视为无符号整型。
+
+\begin{quotation}
+  \textbf{string::string()}
+
+  \begin{itemize}
+    \item 此为默认构造函数，其创建空字符串。
+  \end{itemize}
+
+  \begin{lstlisting}[language=C++]
+    std::string sSource;
+    std::cout << sSource;
+    \end{lstlisting}
+
+  输出：
+
+  \begin{lstlisting}
+
+    \end{lstlisting}
+\end{quotation}
+
+\begin{quotation}
+  \textbf{string::string(const string\& strString)}
+
+  \begin{itemize}
+    \item 此为拷贝构造函数，由 strString 拷贝创建一个新字符串。
+  \end{itemize}
+
+  \begin{lstlisting}[language=C++]
+    std::string sSource{ "my string" };
+    std::string sOutput{ sSource };
+    std::cout << sOutput;
+    \end{lstlisting}
+
+  输出：
+
+  \begin{lstlisting}
+    my string
+    \end{lstlisting}
+\end{quotation}
+
+\begin{quotation}
+
+  \textbf{string::string(const string\& strString, \\ size\_type unIndex)}
+
+  \textbf{string::string(const string\& strString, size\_type unIndex, size\_type unLength)}
+
+  \begin{itemize}
+    \item 创建新字符串包含至多从 strString 而来的 unLength 大小的字符，由索引 unIndex 开始。
+          如果遇到 NULL，字符串的拷贝则结束，即使没有触及 unLength。
+    \item 如果没有提供 unLength，所有字符由 unIndex 开始使用。
+    \item 如果 unIndex 大于字符串的长度，那么 out\_of\_range 异常将被抛出
+  \end{itemize}
+
+  \begin{lstlisting}[language=C++]
+    std::string sSource{ "my string" };
+    std::string sOutput{ sSource, 3 };
+    std::cout << sOutput<< '\n';
+    std::string sOutput2(sSource, 3, 4);
+    std::cout << sOutput2 << '\n';
+    \end{lstlisting}
+
+  输出：
+
+  \begin{lstlisting}
+    string
+    stri
+    \end{lstlisting}
+\end{quotation}
+
+\begin{quotation}
+  \textbf{string::string(const char* szCString)}
+
+  \begin{itemize}
+    \item 从 C-style 字符串 szCString 创建新字符串，但不包括空终止符。
+    \item 如果返回的大小超过了最大字符串长度，length\_error 异常将被抛出。
+    \item 警告：szCSting 必须不为空。
+  \end{itemize}
+
+  \begin{lstlisting}[language=C++]
+    const char* szSource{ "my string" };
+    std::string sOutput{ szSource };
+    std::cout << sOutput << '\n';
+    \end{lstlisting}
+
+  输出：
+
+  \begin{lstlisting}
+    my string
+    \end{lstlisting}
+\end{quotation}
+
+\begin{quotation}
+  \textbf{string::string(const char* szCString, size\_type unLength)}
+
+  \begin{itemize}
+    \item 从 C-style 字符串 szCString 的首个 unLength 字符创建字符串。
+    \item 如果返回的大小超过了最大字符串长度，length\_error 异常将被抛出。
+    \item 警告：仅在这个函数，空值不被视为 szCString 中的终止字符串！
+          这就意味着如果 unLength 足够大，可以读取字符串到最后！注意不要溢出字符串的缓存！
+  \end{itemize}
+
+  \begin{lstlisting}[language=C++]
+    const char* szSource{ "my string" };
+    std::string sOutput(szSource, 4);
+    std::cout << sOutput << '\n';
+    \end{lstlisting}
+
+  输出：
+
+  \begin{lstlisting}
+    my s
+    \end{lstlisting}
+\end{quotation}
+
+\begin{quotation}
+  \textbf{string::string(size\_type nNum, char chChar)}
+
+  \begin{itemize}
+    \item 通过字符 chChar 出现的 nNum 次数创建字符串。
+    \item 如果返回的大小超过了最大字符串长度，length\_error 异常将被抛出。
+  \end{itemize}
+
+  \begin{lstlisting}[language=C++]
+    std::string sOutput(4, 'Q');
+    std::cout << sOutput << '\n';
+    \end{lstlisting}
+
+  输出：
+
+  \begin{lstlisting}
+    QQQQ
+    \end{lstlisting}
+\end{quotation}
+
+\begin{quotation}
+  \textbf{template string::string(InputIterator itBeg, InputIterator itEnd)}
+
+  \begin{itemize}
+    \item 由初始化范围字符 [itBeg, itEnd] 创建新字符串。
+    \item 如果返回的大小超过了最大字符串长度，length\_error 异常将被抛出。
+  \end{itemize}
+
+  没有示例代码，因为它的晦涩使得用户基本不会使用它。
+\end{quotation}
+
+\begin{quotation}
+  \textbf{string::~string()}
+
+  \textbf{字符串析构函数}
+
+  \begin{itemize}
+    \item 析构函数。销毁字符串并释放内存。
+  \end{itemize}
+
+  没有示例代码，因为不会显式调用析构函数。
+\end{quotation}
+
+\subsubsection*{数值的构造函数}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <sstream>
+#include <string>
+
+template <typename T>
+inline std::string ToString(T tX)
+{
+    std::ostringstream oStream;
+    oStream << tX;
+    return oStream.str();
+}
+
+int main()
+{
+    std::string sFour{ ToString(4) };
+    std::string sSixPointSeven{ ToString(6.7) };
+    std::string sA{ ToString('A') };
+    std::cout << sFour << '\n';
+    std::cout << sSixPointSeven << '\n';
+    std::cout << sA << '\n';
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+4
+6.7
+A
+\end{lstlisting}
+
+注意这个方法省略了任何错误检查。在 tX 插入 oStream 可能失败。合适的响应应该是在转换失败时抛出异常。
+
+\subsubsection*{字符串转换成数值}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <sstream>
+#include <string>
+
+template <typename T>
+inline bool FromString(const std::string& sString, T& tX)
+{
+    std::istringstream iStream(sString);
+    return !(iStream >> tX).fail(); // extract value into tX, return success or not
+}
+
+int main()
+{
+    double dX;
+    if (FromString("3.4", dX))
+        std::cout << dX << '\n';
+    if (FromString("ABC", dX))
+        std::cout << dX << '\n';
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+3.4
+\end{lstlisting}
+
+注意第二个转换失败了并返回 false。
+
+\end{document}

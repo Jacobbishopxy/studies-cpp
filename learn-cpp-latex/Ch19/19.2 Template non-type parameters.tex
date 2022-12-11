@@ -1,0 +1,89 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{2}{Template non-type parameters}
+
+前一节学到了如何使用模板类型变量来创建类型独立的函数与类。
+模板类型参数是一个占位类型用于替换传入的类型参数。
+
+然而模板类型参数并不是唯一可用的模板参数。
+模板类与函数可以使用其他类型的模板参数，被称为非类型参数。
+
+\subsubsection*{非类型参数}
+
+一个模板非类型参数是一种参数类型是预定义的并且由 constexpr 值传递给入参的模板参数。
+
+一个非类型参数可以是以下任意一个类型：
+
+\begin{itemize}
+    \item 整型
+    \item 枚举类型
+    \item 一个类对象的指针或引用
+    \item 一个函数的指针或引用
+    \item 一个类成员函数的指针或引用
+    \item sts::nullptr\_t
+    \item 浮点类型（C++20 起）
+\end{itemize}
+
+下面的例子中，创建了一个非动态（static）数组类，同时用到了类型参数与非类型参数。
+类型参数控制静态数组的数据类型，而整型的非类型参数控制静态数组的大小。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+template <typename T, int size> // size 是一个整型的非类型参数
+class StaticArray
+{
+private:
+    // 非类型参数控制数组大小
+    T m_array[size] {};
+
+public:
+    T* getArray();
+
+    T& operator[](int index)
+    {
+        return m_array[index];
+    }
+};
+
+// 展示带有非类型参数的类成员函数是如何定义在类定义外部的
+template <typename T, int size>
+T* StaticArray<T, size>::getArray()
+{
+    return m_array;
+}
+
+int main()
+{
+    // 声明整型数组，大小为 12
+    StaticArray<int, 12> intArray;
+
+    // 顺序填数，倒序打印
+    for (int count { 0 }; count < 12; ++count)
+        intArray[count] = count;
+
+    for (int count { 11 }; count >= 0; --count)
+        std::cout << intArray[count] << ' ';
+    std::cout << '\n';
+
+    // 声明浮点型数组，大小为 4
+    StaticArray<double, 4> doubleArray;
+
+    for (int count { 0 }; count < 4; ++count)
+        doubleArray[count] = 4.4 + 0.1 * count;
+
+    for (int count { 0 }; count < 4; ++count)
+        std::cout << doubleArray[count] << ' ';
+
+    return 0;
+}
+\end{lstlisting}
+
+上述代码中一个值得注意的点就是没有动态分配 \acode{m_array} 成员变量！
+这是因为任何给定的 \acode{StaticArray} 类，\acode{size} 必须是 constexpr。
+例如，如果实例化一个 \acode{StaticArray<int, 12>}，编译器替换 \acode{size} 为 12。
+因此 \acode{m_array} 的类型是 \acode{int[12]}，即可被静态分配。
+
+\end{document}

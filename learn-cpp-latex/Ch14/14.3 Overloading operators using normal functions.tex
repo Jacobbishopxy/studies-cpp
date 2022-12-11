@@ -1,0 +1,111 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{3}{Overloading operators using normal functions}
+
+上一节中讲到了使用友元函数来重载操作符。
+这很方便因为可以给与直接访问需要操作的类内部成员的权利。
+然而当不需要访问时，可以使用普通函数来编写重载函数。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class Cents
+{
+private:
+  int m_cents{};
+
+public:
+  Cents(int cents)
+    : m_cents{ cents }
+  {}
+
+  int getCents() const { return m_cents; }
+};
+
+// 注意：该函数不是成员函数也不是友元函数！
+Cents operator+(const Cents& c1, const Cents& c2)
+{
+  // 使用 Cents 构造函数与操作符+(int, int)
+  // 这里并不需要直接访问私有成员
+  return Cents{ c1.getCents() + c2.getCents() };
+}
+
+int main()
+{
+  Cents cents1{ 6 };
+  Cents cents2{ 8 };
+  Cents centsSum{ cents1 + cents2 };
+  std::cout << "I have " << centsSum.getCents() << " cents.\n";
+
+  return 0;
+}
+\end{lstlisting}
+
+由于普通函数和友元函数效果完全一样（仅在访问私有成员时拥有不同等级），
+通常来说不会区分它们。一个区别在于友元函数声明在类内部也可以作为原型；
+而普通函数的版本，用户需要提供自己的函数原型。
+
+Cents.h:
+
+\begin{lstlisting}[language=C++]
+#ifndef CENTS_H
+#define CENTS_H
+
+class Cents
+{
+private:
+  int m_cents{};
+
+public:
+  Cents(int cents)
+    : m_cents{ cents }
+  {}
+
+  int getCents() const { return m_cents; }
+};
+
+// 需要显式提供操作符+ 的原型，这样使得其他文件夹知道该重载的存在
+Cents operator+(const Cents& c1, const Cents& c2);
+
+# endif
+\end{lstlisting}
+
+Cents.cpp:
+
+\begin{lstlisting}[language=C++]
+#include "Cents.h"
+
+// 注意：该函数不是成员函数也不是友元函数！
+Cents operator+(const Cents& c1, const Cents& c2)
+{
+  // 使用 Cents 构造函数与操作符+(int, int)
+  // 这里并不需要直接访问私有成员
+  return { c1.getCents() + c2.getCents() };
+}
+\end{lstlisting}
+
+main.cpp:
+
+\begin{lstlisting}[language=C++]
+#include "Cents.h"
+#include <iostream>
+
+int main()
+{
+  Cents cents1{ 6 };
+  Cents cents2{ 8 };
+  Cents centsSum{ cents1 + cents2 }; // 如果在 Cents.h 中没有原型，这里会编译错误
+  std::cout << "I have " << centsSum.getCents() << " cents.\n";
+
+  return 0;
+}
+\end{lstlisting}
+
+通常而言，如果存在成员函数可用的情况，普通函数比友元函数更为推荐（越少的函数解除类的内部越好）。
+然而，不要仅仅为了使用普通函数来重载操作符而去添加额外的访问函数，直接使用友元函数！
+
+最佳实践：在不需要添加额外的访问函数的情况下，推荐使用普通函数而不是友元函数来重载操作符。
+
+\end{document}

@@ -1,0 +1,205 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{3}{The override and final specifiers, and covariant return types}
+
+在处理一些继承的常见挑战时，有两个特殊的标识符：override 与 final。
+注意它们不被视为关键字 -- 它们是在特定上下文中有特殊意义的普通标识符。
+
+尽管 final 并没有那么常用，override 却是一个需要经常使用的好东西。
+这一节中将讲解它们，并讲解虚函数重写返回类型必须匹配的一种例外规则。
+
+\subsubsection*{override 限定符}
+
+上一节提到过，派生类的虚函数被视为重写仅会考虑其签名与返回类型完全匹配。
+这就会导致疏忽错误，当一个函数意图重写但实际上并没有。
+
+考虑以下例子：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <string_view>
+
+class A
+{
+public:
+  virtual std::string_view getName1(int x) { return "A"; }
+  virtual std::string_view getName2(int x) { return "A"; }
+};
+
+class B : public A
+{
+public:
+  virtual std::string_view getName1(short int x) { return "B"; } // 注意：参数是 short int
+  virtual std::string_view getName2(int x) const { return "B"; } // 注意：函数是 const
+};
+
+int main()
+{
+  B b{};
+  A& rBase{ b };
+  std::cout << rBase.getName1(1) << '\n';
+  std::cout << rBase.getName2(2) << '\n';
+
+  return 0;
+}
+\end{lstlisting}
+
+为了解决想要重写的函数却没有成功的问题，override 限定符可以作用于任何虚函数，仅需要在 const 处添加即可。
+如果函数没有重写基类函数（或是应用到了非虚函数），编译器则会报错。
+
+\begin{lstlisting}[language=C++]
+#include <string_view>
+
+class A
+{
+public:
+  virtual std::string_view getName1(int x) { return "A"; }
+  virtual std::string_view getName2(int x) { return "A"; }
+  virtual std::string_view getName3(int x) { return "A"; }
+};
+
+class B : public A
+{
+public:
+  std::string_view getName1(short int x) override { return "B"; } // 编译错误，函数并没有重写
+  std::string_view getName2(int x) const override { return "B"; } // 编译错误，函数并没有重写
+  std::string_view getName3(int x) override { return "B"; } // 可以，函数重写了 A::getName3(int)
+
+};
+
+int main()
+{
+  return 0;
+}
+\end{lstlisting}
+
+最佳实践：使用 virtual 关键字在基类函数的虚函数上。
+使用 override 限定符（而不是 virtual 关键字）在派生类中需要重写的函数上。
+
+\subsubsection*{final 限定符}
+
+可能也有一种情况就是不希望任何人去重写一个虚函数，或是从类中继承。
+那么 final 限定符就可以用来强制告诉编译器不让这么做。如果用户尝试对标记 final 限定符上重写函数或者继承类，编译器则会报错。
+
+\textbf{final 限定符}处于 override 限定符同样的位置。
+
+\begin{lstlisting}[language=C++]
+#include <string_view>
+
+class A
+{
+public:
+  virtual std::string_view getName() { return "A"; }
+};
+
+class B : public A
+{
+public:
+  // 注意 final 限定符在下一行 -- 使该函数不再可以被重写
+  std::string_view getName() override final { return "B"; } // 可以，重写 A::getName()
+};
+
+class C : public B
+{
+public:
+  std::string_view getName() override { return "C"; } // 编译错误：重写 B::getName()，其为 final
+};
+\end{lstlisting}
+
+组织类被继承也可以在类名前使用 final 限定符：
+
+\begin{lstlisting}[language=C++]
+#include <string_view>
+
+class A
+{
+public:
+  virtual std::string_view getName() { return "A"; }
+};
+
+class B final : public A // 注意这里使用了 final 限定符
+{
+public:
+  std::string_view getName() override { return "B"; }
+};
+
+class C : public B // 编译错误：不可以继承 final 类
+{
+public:
+  std::string_view getName() override { return "C"; }
+};
+\end{lstlisting}
+
+\subsubsection*{协变返回类型}
+
+还有一个特殊情况就是派生类的虚函数重写可以拥有与基类不同类型的返回类型，并且还是被视为匹配的重写。
+如果虚函数的返回类型是某个类的指针或者引用，重写函数可以返回派生类的指针或者引用。
+这被称为\textbf{协变返回类型} covariant return types。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <string_view>
+
+class Base
+{
+public:
+  // 这个版本的 getThis() 返回一个指向 Base 类的指针
+  virtual Base* getThis() { std::cout << "called Base::getThis()\n"; return this; }
+  void printType() { std::cout << "returned a Base\n"; }
+};
+
+class Derived : public Base
+{
+public:
+  // 通常的重写函数必须返回与基类函数相同类型的对象
+  // 然而，因为 Derived 是从 Base 派生而来，因此返回 Derived* 而不是 Base*
+  Derived* getThis() override { std::cout << "called Derived::getThis()\n";  return this; }
+  void printType() { std::cout << "returned a Derived\n"; }
+};
+
+int main()
+{
+  Derived d{};
+  Base* b{ &d };
+  d.getThis()->printType();   // 调用 Derived::getThis()，返回 Derived*，调用 Derived::printType
+  b->getThis()->printType();  // 调用 Derived::getThis()，返回 Base*，调用 Base::printType
+
+  return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+called Derived::getThis()
+returned a Derived
+called Derived::getThis()
+returned a Base
+\end{lstlisting}
+
+一个有趣的地方是关于协变返回类型：C++ 不可以动态选择类型，因此用户总是会获得匹配真实版本的被调用函数的类型。
+
+上述例子中，首先调用 \acode{d.getThis()}。
+因为 d 是一个 Derived，调用 \acode{Derived::getThis()}，返回的是 \acode{*Derived}。
+该 \acode{*Derived} 接着调用非虚函数 \acode{Derived::printType()}。
+
+接着是有趣的部分了。调用 \acode{b->getThis()}。变量 b 是指向 Derived 对象的 Base 指针。
+\acode{Base::getThis()} 是一个虚函数，所以调用 \acode{Derived::getThis()}。
+尽管其返回的是 \acode{*Derived}，但是因为 Base 版本的函数返回的是 \acode{Base*}，
+返回的 \acode{Derived*} 被转换成 \acode{Base*}。
+因为 \acode{Base::printType()} 是非虚函数，其被调用。
+
+换句话说，上述例子中，如果在派生类的对象上调用 \acode{getThis()} 只会得到一个 \acode{Derived*}。
+
+注意如果 \acode{printType()} 是虚函数的话，\acode{b->getThis()}（即 \acode{Base*} 类型的对象）的返回值将会通过虚函数解析，
+接着 \acode{Derived::printType()} 则会被调用。
+
+协变返回类型通常用于虚函数成员函数返回一个类的指针或者引用，
+该类包含了成员函数（例如 \acode{Base::getThis()} 返回一个 \acode{Base*}，
+同时 \acode{Derived::getThis()} 返回一个 \acode{Derived*}）。
+然而这并不是严格必要的。
+协变返回类型可以用于任何这样的场景：重写成员函数的返回值类型是从基类虚函数成员中派生出来的。
+
+\end{document}

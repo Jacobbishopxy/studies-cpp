@@ -1,0 +1,152 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{14}{Function template instantiation}
+
+\subsubsection*{使用函数模版}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+template <typename T>
+T max(T x, T y)
+{
+    return (x > y) ? x : y;
+}
+
+int main()
+{
+    std::cout << max<int>(1, 2) << '\n'; // 实例化并调用函数 max<int>(int, int)
+
+    return 0;
+}
+\end{lstlisting}
+
+由函数模版（带模版类型）创建函数（带指定类型）的过程称为\textbf{函数模版实例化} function template instantiation（或简称\textbf{实例化} instantiation）。
+当这个过程在函数调用时发生，被称为\textbf{隐式实例化} implicit instantiation。
+实例化函数通常也被成为\textbf{函数实例} function instance（或简称\textbf{实例} instance）或者\textbf{模版函数} template function。
+函数实例在任何层面都是普通函数。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+// 函数模版的声明（不需要更多的定义了）
+template <typename T>
+T max(T x, T y);
+
+template<>
+int max<int>(int x, int y) // 生成的函数 max<int>(int, int)
+{
+    return (x > y) ? x : y;
+}
+
+int main()
+{
+    std::cout << max<int>(1, 2) << '\n'; // 实例化 max<int>(int, int) 并调用
+
+    return 0;
+}
+\end{lstlisting}
+
+另一个例子：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+template <typename T>
+T max(T x, T y) // max(T, T) 的函数模版
+{
+    return (x > y) ? x : y;
+}
+
+int main()
+{
+    std::cout << max<int>(1, 2) << '\n';    // 实例化并调用 max<int>(int, int)
+    std::cout << max<int>(4, 3) << '\n';    // 调用已经实例化过的 max<int>(int, int)
+    std::cout << max<double>(1, 2) << '\n'; // 实例化并调用 max<double>(double, double)
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{模版参数推导}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+template <typename T>
+T max(T x, T y)
+{
+    std::cout << "called max<int>(int, int)\n";
+    return (x > y) ? x : y;
+}
+
+int max(int x, int y)
+{
+    std::cout << "called max(int, int)\n";
+    return (x > y) ? x : y;
+}
+
+int main()
+{
+    std::cout << max<int>(1, 2) << '\n'; // 选择 max<int>(int, int)
+    std::cout << max<>(1, 2) << '\n';    // 推导 max<int>(int, int) （非模版函数不被考虑）
+    std::cout << max(1, 2) << '\n';      // 调用函数 max(int, int)
+
+    return 0;
+}
+\end{lstlisting}
+
+最佳实践：使用函数模版时更推荐普通函数调用的语法。
+
+\subsubsection*{在多文件中使用函数模版}
+
+Max.h:
+
+\begin{lstlisting}[language=C++]
+#ifndef MAX_H
+#define MAX_H
+
+template <typename T>
+T max(T x, T y)
+{
+    return (x > y) ? x : y;
+}
+
+#endif
+\end{lstlisting}
+
+Foo.cpp:
+
+\begin{lstlisting}[language=C++]
+#include "Max.h" // 调用 max<T, T>() 的模版定义
+#include <iostream>
+
+void foo()
+{
+  std::cout << max(3, 2) << '\n';
+}
+\end{lstlisting}
+
+main.cpp:
+
+\begin{lstlisting}[language=C++]
+#include "Max.h" // 引入 max<T, T>() 的模版定义
+#include <iostream>
+
+void foo(); // 函数 foo 的前向声明
+
+int main()
+{
+    std::cout << max(3, 5) << '\n';
+    foo();
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{泛型编程}
+
+因为模版类型可以被任何实际类型替换，模版类型有时也被成为\textbf{泛型类型}。
+同样因为模版可以无关特定类型，编写模版有时也被成为\textbf{泛型编程}。

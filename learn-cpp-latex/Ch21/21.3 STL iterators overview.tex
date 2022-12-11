@@ -1,0 +1,145 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{3}{STL iterators overview}
+
+\textbf{迭代器 iterator}是一种对象可以穿过（遍历）一个容器类而不需要用户知道容器是如何实现的。
+很多类（特别是 list 和关联类），遍历器是主要的元素访问方式。
+
+迭代器最好的可视化是作为一个指针指向给定容器中的元素，并带有一系列重载的操作符提供了良好的功能：
+
+\begin{itemize}
+    \item \textbf{操作符*} -- 解引用迭代器返回迭代器当前指向的元素
+    \item \textbf{操作符++} -- 移动迭代器到容器中的下一个元素。大多数迭代器同样也提供操作符--用于移动到上一个元素。
+    \item \textbf{操作符== 与操作符!=} -- 基础比较符用于判断两个迭代器是否指向同一个元素。为了比较两个值，首先需要解引用迭代器，接着使用比较操作符。
+    \item \textbf{操作符=} -- 指派迭代器至新的位置（通常是容器元素的开始或结尾）。为了指派，首先需要解引用迭代器，接着使用指派操作符。
+\end{itemize}
+
+每个容器包含了四种基础成员函数用于使用操作符=：
+
+\begin{itemize}
+    \item \textbf{begin()} 返回一个迭代器表示容器的起始元素。
+    \item \textbf{end()} 返回一个迭代器表示容器的末尾元素之后的位置。
+    \item \textbf{cbegin()} 与 \acode{begin()} 相同，只读。
+    \item \textbf{cend()} 与 \acode{end()} 相同，只读。
+\end{itemize}
+
+\acode{end()} 不指向 list 的最后一个元素看起来有点奇怪，但是这主要是让循环更简单：
+遍历所有可继续的元素直到触及 \acode{end()}，接着就知道完成了。
+
+最后，所有容器提供（至少）两种类型的迭代器：
+
+\begin{itemize}
+    \item \textbf{container::iterator} 提供读/写迭代器
+    \item \textbf{container::const\_iterator} 提供只读迭代器
+\end{itemize}
+
+遍历一个 vector：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <vector>
+
+int main()
+{
+    std::vector<int> vect;
+    for (int count=0; count < 6; ++count)
+        vect.push_back(count);
+
+    std::vector<int>::const_iterator it; // 声明一个只读迭代器
+    it = vect.cbegin(); // 赋值 it 来开始 vector
+    while (it != vect.cend()) // while it 直到触及结尾
+        {
+        std::cout << *it << ' '; // 打印所指向的元素
+        ++it; // 迭代器指向下一个元素
+        }
+
+    std::cout << '\n';
+}
+\end{lstlisting}
+
+遍历一个 list：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <list>
+
+int main()
+{
+
+    std::list<int> li;
+    for (int count=0; count < 6; ++count)
+        li.push_back(count);
+
+    std::list<int>::const_iterator it; // 声明一个迭代器
+    it = li.cbegin(); // 赋值 it 来开始 list
+    while (it != li.cend()) // while it 直到触及结尾
+    {
+        std::cout << *it << ' '; // 打印所指向的元素
+        ++it; // 迭代器指向下一个元素
+    }
+
+    std::cout << '\n';
+}
+\end{lstlisting}
+
+遍历一个 set：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <set>
+
+int main()
+{
+    std::set<int> myset;
+    myset.insert(7);
+    myset.insert(2);
+    myset.insert(-6);
+    myset.insert(8);
+    myset.insert(1);
+    myset.insert(-4);
+
+    std::set<int>::const_iterator it; // 声明一个迭代器
+    it = myset.cbegin(); // 赋值 it 来开始 set
+    while (it != myset.cend()) // while it 直到触及结尾
+    {
+        std::cout << *it << ' '; // 打印所指向的元素
+        ++it; // 迭代器指向下一个元素
+    }
+
+    std::cout << '\n';
+}
+\end{lstlisting}
+
+遍历 map 会有一点狡猾，maps 和 multimaps 获取的是一对元素（定义为 \acode{std::pair}），
+可以使用 \acode{make_pair()} 帮助函数来创建对，
+\acode{std::pair} 允许通过 \acode{first} 与 \acode{second} 成员函数来访问元素。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <map>
+#include <string>
+
+int main()
+{
+    std::map<int, std::string> mymap;
+    mymap.insert(std::make_pair(4, "apple"));
+    mymap.insert(std::make_pair(2, "orange"));
+    mymap.insert(std::make_pair(1, "banana"));
+    mymap.insert(std::make_pair(3, "grapes"));
+    mymap.insert(std::make_pair(6, "mango"));
+    mymap.insert(std::make_pair(5, "peach"));
+
+    auto it{ mymap.cbegin() }; // 声明一个 const 迭代器并赋值 it 来开始 vector
+    while (it != mymap.cend()) // while it 直到触及结尾
+    {
+        std::cout << it->first << '=' << it->second << ' '; // 打印所指向的元素
+        ++it; // 迭代器指向下一个元素
+    }
+
+    std::cout << '\n';
+}
+\end{lstlisting}
+
+\end{document}

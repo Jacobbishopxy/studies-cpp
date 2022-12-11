@@ -1,0 +1,231 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{4}{Association}
+
+\subsubsection*{关联}
+
+被视为\textbf{关联}，一个对象与另一个对象之间必须符合以下关系：
+
+\begin{itemize}
+    \item 关联对象（成员）除了关联关系以外，与对象（类）无其它关系
+    \item 关联对象（成员）同一时间可以属于不止一个对象（类）
+    \item 关联对象（成员）的存在\textit{没有}被对象（类）管理
+    \item 关联对象（成员）有可能知道对象（类）的存在
+\end{itemize}
+
+不同于组合与聚合，”部分“是整个对象的一部分，在关联关系中，被关联的对象与对象没有其他关系。
+类似于聚合，被关联对象可以同时属于若干对象，且不由这些对象关联。
+然而不同于聚合，即总是单向关系的，关联关系中，可以使单向或者双向的（即两个对象感知对方）。
+
+\subsubsection*{实现关联}
+
+doctor\_patient.h:
+
+\begin{lstlisting}[language=C++]
+#include <functional>
+#include <iostream>
+#include <string>
+#include <vector>
+
+class Patient;
+
+class Doctor
+{
+    private:
+    std::string m_name{};
+    std::vector<std::reference_wrapper<const Patient>> m_patient{};
+
+    public:
+    Doctor(const std::string& name)
+        : m_name{name}
+    {
+    }
+
+    void addPatient(Patient& patient);
+
+    friend std::ostream& operator<<(std::ostream& out, const Doctor& doctor);
+
+    const std::string& getName() const { return m_name; }
+};
+
+class Patient
+{
+    private:
+    std::string m_name{};
+    std::vector<std::reference_wrapper<const Doctor>> m_doctor{};
+
+    void addDoctor(const Doctor& doctor) { m_doctor.push_back(doctor); }
+
+    public:
+    Patient(const std::string& name)
+        : m_name{name}
+    {
+    }
+
+    friend std::ostream& operator<<(std::ostream& out, const Patient& patient);
+
+    const std::string& getName() const { return m_name; }
+
+    friend void Doctor::addPatient(Patient& patient);
+};
+
+void Doctor::addPatient(Patient& patient)
+{
+    m_patient.push_back(patient);
+
+    patient.addDoctor(*this);
+}
+
+std::ostream& operator<<(std::ostream& out, const Doctor& doctor)
+{
+    if (doctor.m_patient.empty())
+    {
+    out << doctor.m_name << " has no patients right now";
+    return out;
+    }
+
+    out << doctor.m_name << " is seeing patients: ";
+    for (const auto& patient : doctor.m_patient)
+    out << patient.get().getName() << ' ';
+
+    return out;
+}
+
+std::ostream& operator<<(std::ostream& out, const Patient& patient)
+{
+    if (patient.m_doctor.empty())
+    {
+    out << patient.getName() << " has no doctors right now";
+    return out;
+    }
+
+    out << patient.m_name << " is seeing doctors: ";
+    for (const auto& doctor : patient.m_doctor)
+    out << doctor.get().getName() << ' ';
+
+    return out;
+}
+\end{lstlisting}
+
+\subsubsection*{自身关联}
+
+有时候对象可能与同样类型的其他对象拥有关系。
+这被称为\textbf{自身关联} reflexive association。
+一个比较好的例子就是大学课程与其前置课程（同样也是大学课程）之间的关系。
+
+\begin{lstlisting}[language=C++]
+#include <string>
+class Course
+{
+private:
+    std::string m_name;
+    const Course* m_prerequisite;
+
+public:
+    Course(const std::string& name, const Course* prerequisite = nullptr):
+        m_name{ name }, m_prerequisite{ prerequisite }
+    {
+    }
+
+};
+\end{lstlisting}
+
+这样就可以实现关联链（一个课程有前置课程，前置课程也有其前置课程等等）。
+
+\subsubsection*{关联可以使非直接的}
+
+之前所有的案例中，使用的要么是指针要么是引用来直接连接对象。
+然而在关联关系中，这并不是严格需要的。任何种类的数据允许连个对象链接在一起就足够了。
+
+car\_driver.h:
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <string>
+
+class Car
+{
+  private:
+  std::string m_name;
+  int m_id;
+
+  public:
+  Car(const std::string& name, int id)
+      : m_name{name}, m_id{id}
+  {
+  }
+
+  const std::string& getName() const { return m_name; }
+  int getId() const { return m_id; }
+};
+
+// CarLot 本质上是一个 static 的 Car 数组，以及一个用于获取它们的查询函数。
+// 因为是 static 的，不需要为其分配一个 CarLot 类型的对象
+class CarLot
+{
+  private:
+  static Car s_carLot[4];
+
+  public:
+  CarLot(/* args */) = delete; // 确保不会创建一个 CarLot
+
+  static Car* getCar(int id)
+  {
+    for (int count{0}; count < 4; ++count)
+    {
+      if (s_carLot[count].getId() == id)
+      {
+        return &(s_carLot[count]);
+      }
+    }
+
+    return nullptr;
+  }
+};
+
+Car CarLot::s_carLot[4]{
+    {"Prius", 4}, {"Corolla", 17}, {"Accord", 84}, {"Matrix", 62}};
+
+class Driver
+{
+  private:
+  std::string m_name;
+  int m_carId; // 可以通过 ID 而不是指针来关联 Car
+
+  public:
+  Driver(const std::string& name, int carId)
+      : m_name{name}, m_carId{carId}
+  {
+  }
+
+  const std::string& getName() const { return m_name; }
+  int getCarId() const { return m_carId; }
+};
+\end{lstlisting}
+
+\subsubsection*{组合 vs 聚合 vs 关联}
+
+\begin{center}
+    \begin{tiny}
+        \begin{tabularx}{ 1\textwidth}{
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X |
+            }
+            \hline
+            Property                               & Composition    & Aggregation    & Association                     \\
+            \hline
+            Relationship type                      & Whole/part     & Whole/part     & Otherwise unrelated             \\
+            Members can belong to multiple classes & No             & Yes            & Yes                             \\
+            Members’ existence managed by class    & Yes            & No             & No                              \\
+            Directionality                         & Unidirectional & Unidirectional & Unidirectional or bidirectional \\
+            Relationship verb                      & Part-of        & Has-a          & Uses-a                          \\
+            \hline
+        \end{tabularx}
+    \end{tiny}
+\end{center}
+
+\end{document}

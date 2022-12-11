@@ -1,0 +1,304 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{1}{Pointers and references to the base class of derived objects}
+
+在之前的章节中学习了如何使用继承从现有类派生出新的类。
+这一章将会集中学习最重要也是最强大的继承 -- 虚函数。
+
+\begin{lstlisting}[language=C++]
+#include <string_view>
+
+class Base
+{
+protected:
+    int m_value {};
+
+public:
+    Base(int value)
+        : m_value{ value }
+    {
+    }
+
+    std::string_view getName() const { return "Base"; }
+    int getValue() const { return m_value; }
+};
+
+class Derived: public Base
+{
+public:
+    Derived(int value)
+        : Base{ value }
+    {
+    }
+
+    std::string_view getName() const { return "Derived"; }
+    int getValueDoubled() const { return m_value * 2; }
+};
+\end{lstlisting}
+
+当创建一个派生对象，它包含了 \acode{Base} 部分（首先被构造出来），
+以及 \acode{Derived} 部分（其次被构造）。注意继承表示两个对象之间是 is-a 关系。
+因为 \acode{Derived} is-a \acode{Base}，那么 \acode{Derived} 包含了 \acode{Base} 部分是合理的。
+
+\subsubsection*{指针，引用，以及派生类}
+
+对 \acode{Derived} 对象设置指针和引用应该是符合直觉的。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    Derived derived{ 5 };
+    std::cout << "derived is a " << derived.getName() << " and has value " << derived.getValue() << '\n';
+
+    Derived& rDerived{ derived };
+    std::cout << "rDerived is a " << rDerived.getName() << " and has value " << rDerived.getValue() << '\n';
+
+    Derived* pDerived{ &derived };
+    std::cout << "pDerived is a " << pDerived->getName() << " and has value " << pDerived->getValue() << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+derived is a Derived and has value 5
+rDerived is a Derived and has value 5
+pDerived is a Derived and has value 5
+\end{lstlisting}
+
+然而因为 \acode{Derived} 拥有 \acode{Base} 部分，
+一个更加有趣的问题就是 C++ 是否让用户设置 \acode{Base} 指针或者引用给 \acode{Derived} 对象。
+实际上这是可以的！
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    Derived derived{ 5 };
+
+    // 它们都是合法的！
+    Base& rBase{ derived };
+    Base* pBase{ &derived };
+
+    std::cout << "derived is a " << derived.getName() << " and has value " << derived.getValue() << '\n';
+    std::cout << "rBase is a " << rBase.getName() << " and has value " << rBase.getValue() << '\n';
+    std::cout << "pBase is a " << pBase->getName() << " and has value " << pBase->getValue() << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+derived is a Derived and has value 5
+rBase is a Base and has value 5
+pBase is a Base and has value 5
+\end{lstlisting}
+
+这个结果可能并不像一开始预期那样！
+
+这是因为 \acode{rBase} 与 \acode{pBase} 是 \acode{Base} 的引用与指针，
+它们只能看到 \acode{Base} 的成员（或者是任何 \acode{Base} 所继承的类的成员）。
+因此即使 \acode{Derived::getName()} 覆盖 shadows 了 \acode{Derived} 对象的 \acode{Base::getName()}，
+\acode{Base} 指针/引用并不能看到 \acode{Derived::getName()}。
+结果而言，它们调用的是 \acode{Base::getName()}。
+
+注意这也同样意味着不能使用 \acode{rBase} 或 \acode{pBase} 来调用 \acode{Derived::getValueDoubled()}。
+它们不能看到任何 \acode{Derived} 的内容。
+
+下面是一个将在下一章构建的更为复杂的例子：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <string_view>
+#include <string>
+
+class Animal
+{
+protected:
+    std::string m_name;
+
+    // 使该构造函数为 protected，因为不希望任何人可以直接创建 Animal 对象，
+    // 但是仍然希望派生类可以使用它。
+    Animal(std::string_view name)
+        : m_name{ name }
+    {
+    }
+
+    // 用于阻止切片（稍后讲解）
+    Animal(const Animal&) = default;
+    Animal& operator=(const Animal&) = default;
+
+public:
+    std::string_view getName() const { return m_name; }
+    std::string_view speak() const { return "???"; }
+};
+
+class Cat: public Animal
+{
+public:
+    Cat(std::string_view name)
+        : Animal{ name }
+    {
+    }
+
+    std::string_view speak() const { return "Meow"; }
+};
+
+class Dog: public Animal
+{
+public:
+    Dog(std::string_view name)
+        : Animal{ name }
+    {
+    }
+
+    std::string_view speak() const { return "Woof"; }
+};
+
+int main()
+{
+    const Cat cat{ "Fred" };
+    std::cout << "cat is named " << cat.getName() << ", and it says " << cat.speak() << '\n';
+
+    const Dog dog{ "Garbo" };
+    std::cout << "dog is named " << dog.getName() << ", and it says " << dog.speak() << '\n';
+
+    const Animal* pAnimal{ &cat };
+    std::cout << "pAnimal is named " << pAnimal->getName() << ", and it says " << pAnimal->speak() << '\n';
+
+    pAnimal = &dog;
+    std::cout << "pAnimal is named " << pAnimal->getName() << ", and it says " << pAnimal->speak() << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+cat is named Fred, and it says Meow
+dog is named Garbo, and it says Woof
+pAnimal is named Fred, and it says ???
+pAnimal is named Garbo, and it says ???
+\end{lstlisting}
+
+这里也有同样的问题。
+因为 \acode{pAnimal} 是 \acode{Animal} 指针，
+它只可以看见作为 \acode{Animal} 类的部分。
+因此，\acode{pAnimal->speak()} 调用了 \acode{Animal::speak()} 而不是 \acode{Dog::speak()} 或 \acode{Cat::speak()} 函数。
+
+\subsubsection*{对基类使用指针与引用}
+
+这个时候有人可能会说“上述的例子看起来有点蠢。
+为什么不直接设置派生对象的指针或者引用？”这有几个很好的原因。
+
+首先，假设要编写一个函数打印动物名以及声音。不使用基类指针的话则需要使用重载函数，例如：
+
+\begin{lstlisting}[language=C++]
+void report(const Cat& cat)
+{
+    std::cout << cat.getName() << " says " << cat.speak() << '\n';
+}
+
+void report(const Dog& dog)
+{
+    std::cout << dog.getName() << " says " << dog.speak() << '\n';
+}
+\end{lstlisting}
+
+这么看起来并不难，但是如果有 30 种不同的动物类型呢？
+需要编写 30 个几乎相同的函数！另外每次新增一个动物类型都需要为其编写一个新函数。
+
+然而因为 Cat 和 Dog 都是 Animal 的派生类，Cat 和 Dog 都拥有 Animal 部分。
+因此以下的做法是符合常理的：
+
+\begin{lstlisting}[language=C++]
+void report(const Animal& rAnimal)
+{
+    std::cout << rAnimal.getName() << " says " << rAnimal.speak() << '\n';
+}
+\end{lstlisting}
+
+当然了，这样的问题还是在于引用还是调用基类的函数而不是派生类的函数。
+
+其次，假设存在 3 个 cat 与 3 个 dog，并希望使它们在同一个数组中便于访问。
+因为数组仅可以保存一种类型的对象，在不使用基类的指针或者引用的情况下，
+需要为每个派生类型都去创建各自的数组。例如：
+
+\begin{lstlisting}[language=C++]
+#include <array>
+#include <iostream>
+
+// Cat and Dog from the example above
+
+int main()
+{
+    const auto& cats{ std::to_array<Cat>({{ "Fred" }, { "Misty" }, { "Zeke" }}) };
+    const auto& dogs{ std::to_array<Dog>({{ "Garbo" }, { "Pooky" }, { "Truffle" }}) };
+
+    // Before C++20
+    // const std::array<Cat, 3> cats{{ { "Fred" }, { "Misty" }, { "Zeke" } }};
+    // const std::array<Dog, 3> dogs{{ { "Garbo" }, { "Pooky" }, { "Truffle" } }};
+
+    for (const auto& cat : cats)
+    {
+        std::cout << cat.getName() << " says " << cat.speak() << '\n';
+    }
+
+    for (const auto& dog : dogs)
+    {
+        std::cout << dog.getName() << " says " << dog.speak() << '\n';
+    }
+
+    return 0;
+}
+\end{lstlisting}
+
+那么如果是 30 种不同类型的动物呢？需要 30 个数组！
+
+然而因为 Cat 和 Dog 都是 Animal 的派生类，以下的做法也是符合常理的：
+
+\begin{lstlisting}[language=C++]
+#include <array>
+#include <iostream>
+
+// Cat and Dog from the example above
+
+int main()
+{
+    const Cat fred{ "Fred" };
+    const Cat misty{ "Misty" };
+    const Cat zeke{ "Zeke" };
+
+    const Dog garbo{ "Garbo" };
+    const Dog pooky{ "Pooky" };
+    const Dog truffle{ "Truffle" };
+
+    // Set up an array of pointers to animals, and set those pointers to our Cat and Dog objects
+    // Note: to_array requires C++20 support (and at the time of writing, Visual Studio 2022 still doesn't support it correctly)
+    const auto animals{ std::to_array<const Animal*>({&fred, &garbo, &misty, &pooky, &truffle, &zeke }) };
+
+    // Before C++20, with the array size being explicitly specified
+    // const std::array<const Animal*, 6> animals{ &fred, &garbo, &misty, &pooky, &truffle, &zeke };
+
+    for (const auto animal : animals)
+    {
+        std::cout << animal->getName() << " says " << animal->speak() << '\n';
+    }
+
+    return 0;
+}
+\end{lstlisting}
+
+然而这里遇到的问题还是与上述案例一样。现在可以猜一猜虚函数是做什么用的呢？
+
+\end{document}

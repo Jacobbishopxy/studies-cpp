@@ -1,0 +1,195 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{19}{Introduction to standard library algorithms}
+
+由 C++ 算数标准库提供的功能主要分为三种类型：
+
+\begin{itemize}
+    \item \textbf{Inspectors} -- 用于观察（但不修改）容器中的数据。例如查询以及计数。
+    \item \textbf{Mutators} -- 用于修改容器中的数据。例如排序以及乱序。
+    \item \textbf{Facilitators} -- 用于由数据成员生成结果。例如乘法，或者以何种形式的方式排序。
+\end{itemize}
+
+\subsubsection*{使用 std::find 通过值寻找元素}
+
+\begin{lstlisting}[language=C++]
+#include <algorithm>
+#include <array>
+#include <iostream>
+
+int main()
+{
+    std::array arr{ 13, 90, 99, 5, 40, 80 };
+
+    std::cout << "Enter a value to search for and replace with: ";
+    int search{};
+    int replace{};
+    std::cin >> search >> replace;
+
+    // 省略输入检查
+
+    // std::find 返回一个迭代器，指向找到的元素（或是容器的末尾）
+    // 用一个变量存储它，使用类型推导做该迭代器的类型（因为不关心）
+    auto found{ std::find(arr.begin(), arr.end(), search) };
+
+    // 算法在找不到目标的情况下返回迭代器的末尾。
+    // 使用成员函数 end() 访问
+    if (found == arr.end())
+    {
+        std::cout << "Could not find " << search << '\n';
+    }
+    else
+    {
+        // 替换值
+        *found = replace;
+    }
+
+    for (int i : arr)
+    {
+        std::cout << i << ' ';
+    }
+
+    std::cout << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{使用 std::find\_if 寻找匹配符合某种条件的元素}
+
+\begin{lstlisting}[language=C++]
+#include <algorithm>
+#include <array>
+#include <iostream>
+#include <string_view>
+
+// 函数将返回 true 如果元素匹配
+bool containsNut(std::string_view str)
+{
+    // 如果没有找到子字符串 std::string_view::find 返回 std::string_view::npos
+    // 否则返回子字符串出现的索引。
+    return (str.find("nut") != std::string_view::npos);
+}
+
+int main()
+{
+    std::array<std::string_view, 4> arr{ "apple", "banana", "walnut", "lemon" };
+
+    // 检索数组查看是否有元素包含 “nut” 子字符串
+    auto found{ std::find_if(arr.begin(), arr.end(), containsNut) };
+
+    if (found == arr.end())
+    {
+        std::cout << "No nuts\n";
+    }
+    else
+    {
+        std::cout << "Found " << *found << '\n';
+    }
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{使用 std::count 与 std::count\_if 统计出现次数}
+
+\acode{std::count} 统计所有出现的元素； \acode{std::count\_if} 统计所有符合条件的元素。
+
+\begin{lstlisting}[language=C++]
+#include <algorithm>
+#include <array>
+#include <iostream>
+#include <string_view>
+
+bool containsNut(std::string_view str)
+{
+    return (str.find("nut") != std::string_view::npos);
+}
+
+int main()
+{
+    std::array<std::string_view, 5> arr{ "apple", "banana", "walnut", "lemon", "peanut" };
+
+    auto nuts{ std::count_if(arr.begin(), arr.end(), containsNut) };
+
+    std::cout << "Counted " << nuts << " nut(s)\n";
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{使用 std::sort 进行自定义排序}
+
+\acode{std::sort} 可以接收一个函数作为第三个参数用于实现自定义排序。该函数接收两个用作比较的参数，如果第一个参数排序在第二个参数之前返回 true。默认情况下 \acode{std::sort} 进行的是升序排序。
+
+\begin{lstlisting}[language=C++]
+#include <algorithm>
+#include <array>
+#include <iostream>
+
+bool greater(int a, int b)
+{
+    // 排序 @a 在 @b 之前，如果 @a 大于 @b
+    return (a > b);
+}
+
+int main()
+{
+    std::array arr{ 13, 90, 99, 5, 40, 80 };
+
+    // 传递 greater 函数给 std::sort
+    std::sort(arr.begin(), arr.end(), greater);
+
+    for (int i : arr)
+    {
+        std::cout << i << ' ';
+    }
+
+    std::cout << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{使用 std::for\_each 对一个容器中所有元素操作}
+
+\acode{std::for\_each} 接收一个列表作为输入，并应用自定义函数于每个元素。
+
+\begin{lstlisting}[language=C++]
+#include <algorithm>
+#include <array>
+#include <iostream>
+
+void doubleNumber(int& i)
+{
+    i *= 2;
+}
+
+int main()
+{
+    std::array arr{ 1, 2, 3, 4 };
+
+    std::for_each(arr.begin(), arr.end(), doubleNumber);
+
+    for (int i : arr)
+    {
+        std::cout << i << ' ';
+    }
+
+    std::cout << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{执行顺序}
+
+注意标准库中的大部分算法并不保证执行的顺序。这类的算法，只关心用户传递的函数，并不假设特定顺序，因为不同的编译器顺序的调用可能不同。
+
+下列算法保证顺序执行：\acode{std::for\_each}，\acode{std::copy}，\acode{std::copy\_backward}，\acode{std::move} 与 \acode{std::move_backward}。
+
+最佳实践：除非有特别的指出，不要假设标准库的算法能确保执行的顺序。
+
+\end{document}

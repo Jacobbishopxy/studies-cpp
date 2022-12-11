@@ -1,0 +1,436 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{5}{Partial template specialization}
+
+19.2 模板非类型参数章节中学习了表达式参数是如何使用在参数化模板类的。
+现在再来看一下之前写过的 \acode{StaticArray} 例子：
+
+\begin{lstlisting}[language=C++]
+template <typename T, int size> // size 是表达式参数
+class StaticArray
+{
+private:
+    // 表达式参数控制了数组的长度
+    T m_array[size]{};
+
+public:
+    T* getArray() { return m_array; }
+
+    T& operator[](int index)
+    {
+        return m_array[index];
+    }
+};
+\end{lstlisting}
+
+这个类拥有两个模板参数，一个类型参数，以及一个表达式参数。
+
+现在希望编写一个函数来打印整个数组。
+尽管可以以成员函数的方式实现它，不过现在这里选择使用一个非成员函数可以让例子更容易向主题展开。
+
+使用模板，可以想到以下方案：
+
+\begin{lstlisting}[language=C++]
+template <typename T, int size>
+void print(StaticArray<T, size>& array)
+{
+    for (int count{ 0 }; count < size; ++count)
+        std::cout << array[count] << ' ';
+}
+\end{lstlisting}
+
+整合一下：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <cstring>
+
+template <typename T, int size>
+class StaticArray
+{
+private:
+  T m_array[size]{};
+
+public:
+  T* getArray() { return m_array; }
+
+  T& operator[](int index)
+  {
+    return m_array[index];
+  }
+  };
+
+template <typename T, int size>
+void print(StaticArray<T, size>& array)
+{
+  for (int count{ 0 }; count < size; ++count)
+    std::cout << array[count] << ' ';
+}
+
+int main()
+{
+  // 声明一个 int 数组
+  StaticArray<int, 4> int4{};
+  int4[0] = 0;
+  int4[1] = 1;
+  int4[2] = 2;
+  int4[3] = 3;
+
+  // 打印数组
+  print(int4);
+
+  return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+0 1 2 3
+\end{lstlisting}
+
+尽管这可以工作，但是它有一个设计缺陷。考虑以下代码：
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    // 声明一个 char 数组
+    StaticArray<char, 14> char14{};
+
+    std::strcpy(char14.getArray(), "Hello, world!");
+
+    // 打印数组
+    print(char14);
+
+    return 0;
+}
+\end{lstlisting}
+
+该程序可以被编译，执行，并打印以下值：
+
+\begin{lstlisting}
+H e l l o ,   w o r l d !
+\end{lstlisting}
+
+对于非字符类型而言，在每个元素之间添加空格是有意义的，这样它们不会跑到一起去。
+然而对于字符类型而言，没有空格更有意义。那么该如何解决这个问题呢？
+
+\subsubsection*{模板特化来拯救吗？}
+
+很多人可能第一个想到的会是使用模板特化。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <cstring>
+
+template <typename T, int size> // size is the expression parameter
+class StaticArray
+{
+private:
+  // The expression parameter controls the size of the array
+  T m_array[size]{};
+
+public:
+  T* getArray() { return m_array; }
+
+  T& operator[](int index)
+  {
+    return m_array[index];
+  }
+};
+
+template <typename T, int size>
+void print(StaticArray<T, size>& array)
+{
+  for (int count{ 0 }; count < size; ++count)
+    std::cout << array[count] << ' ';
+}
+
+// Override print() for fully specialized StaticArray<char, 14>
+template <>
+void print(StaticArray<char, 14>& array)
+{
+  for (int count{ 0 }; count < 14; ++count)
+    std::cout << array[count];
+}
+
+int main()
+{
+  // declare a char array
+  StaticArray<char, 14> char14{};
+
+  std::strcpy(char14.getArray(), "Hello, world!");
+
+  // Print the array
+  print(char14);
+
+  return 0;
+}
+\end{lstlisting}
+
+很明显假设要调用 \acode{StaticArray<char, 12>} 的时候还需要再拷贝一份 \acode{print} 函数。
+
+\subsubsection*{模板偏特化}
+
+模板片特化 partial template specialization 允许特化类（但不是单独函数！）的一部分，而不是全部。
+上述问题的最理想的解决方案是重载 \acode{print} 函数，但是留下长度的表达式参数模板化以便应对不同的需求。
+
+这里是重载 \acode{print} 函数并接受一个片特化的 \acode{StaticArray}：
+
+\begin{lstlisting}[language=C++]
+// 重载 print() 函数，为了偏特化的 StaticArray<char, size>
+template <int size> // size 仍然是一个模板表达式参数
+void print(StaticArray<char, size>& array) // 这里显式定义字符类型
+{
+  for (int count{ 0 }; count < size; ++count)
+    std::cout << array[count];
+}
+\end{lstlisting}
+
+可以看到显示声明的这个函数仅对于 \acode{StaticArray} 的字符类型有效，
+size 仍然是一个模板表达式参数，所以它将对任何 size 的字符数组有效。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <cstring>
+
+template <typename T, int size>
+class StaticArray
+{
+private:
+  T m_array[size]{};
+
+public:
+  T* getArray() { return m_array; }
+
+  T& operator[](int index)
+  {
+    return m_array[index];
+  }
+};
+
+template <typename T, int size>
+void print(StaticArray<T, size>& array)
+{
+  for (int count{ 0 }; count < size; ++count)
+    std::cout << array[count] << ' ';
+}
+
+template <int size>
+void print(StaticArray<char, size>& array)
+{
+  for (int count{ 0 }; count < size; ++count)
+    std::cout << array[count];
+}
+
+int main()
+{
+  // 声明 size 14 的数组
+  StaticArray<char, 14> char14{};
+
+  std::strcpy(char14.getArray(), "Hello, world!");
+
+  print(char14);
+
+  std::cout << ' ';
+
+  // 声明 size 12 的数组
+  StaticArray<char, 12> char12{};
+
+  std::strcpy(char12.getArray(), "Hello, mom!");
+
+  print(char12);
+
+  return 0;
+}
+\end{lstlisting}
+
+偏特化模板仅可以在类上面使用，而不能在模板函数使用（函数必须是全特化的）。
+
+\subsubsection*{对成员函数的模板偏特化}
+
+由于函数的偏特化限制导致了在处理成员函数的时候会出现一些挑战。
+例如，如果是以下这样定义 \acode{StaticArray} 的呢？
+
+\begin{lstlisting}[language=C++]
+template <typename T, int size>
+class StaticArray
+{
+private:
+    T m_array[size]{};
+
+public:
+    T* getArray() { return m_array; }
+
+    T& operator[](int index)
+    {
+        return m_array[index];
+    }
+
+    void print()
+    {
+        for (int i{ 0 }; i < size; ++i)
+            std::cout << m_array[i] << ' ';
+        std::cout << '\n';
+    }
+};
+\end{lstlisting}
+
+\acode{print()} 现在是类的成员函数，那么这么尝试：
+
+\begin{lstlisting}[language=C++]
+// 不起作用
+template <int size>
+void StaticArray<double, size>::print()
+{
+  for (int i{ 0 }; i < size; ++i)
+    std::cout << std::scientific << m_array[i] << ' ';
+  std::cout << '\n';
+}
+\end{lstlisting}
+
+不幸的是这并不起作用，因为尝试偏特化一个函数，这是不允许的。
+
+那么该如何绕过这个问题呢？一种显而易见的方式就是对整个类特化：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+template <typename T, int size>
+class StaticArray
+{
+private:
+  T m_array[size]{};
+
+public:
+  T* getArray() { return m_array; }
+
+  T& operator[](int index)
+  {
+    return m_array[index];
+  }
+  void print()
+  {
+    for (int i{ 0 }; i < size; ++i)
+      std::cout << m_array[i] << ' ';
+    std::cout << '\n';
+  }
+};
+
+template <int size>
+class StaticArray<double, size>
+{
+private:
+  double m_array[size]{};
+
+public:
+  double* getArray() { return m_array; }
+
+  double& operator[](int index)
+  {
+    return m_array[index];
+  }
+  void print()
+  {
+    for (int i{ 0 }; i < size; ++i)
+      std::cout << std::scientific << m_array[i] << ' ';
+    std::cout << '\n';
+  }
+};
+
+int main()
+{
+  StaticArray<int, 6> intArray{};
+
+  for (int count{ 0 }; count < 6; ++count)
+    intArray[count] = count;
+
+  intArray.print();
+
+  StaticArray<double, 4> doubleArray{};
+
+  for (int count{ 0 }; count < 4; ++count)
+    doubleArray[count] = (4.0 + 0.1 * count);
+
+  doubleArray.print();
+
+  return 0;
+}
+\end{lstlisting}
+
+然而这并不是一个好的解决方案，因为重复了很多 \acode{StaticArray<T, size>} 的代码。
+
+幸运的是，使用一个公共的基类可以绕过这个问题：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+template <typename T, int size>
+class StaticArray_Base
+{
+protected:
+  T m_array[size]{};
+
+public:
+  T* getArray() { return m_array; }
+
+  T& operator[](int index)
+  {
+    return m_array[index];
+  }
+
+  void print()
+  {
+    for (int i{ 0 }; i < size; ++i)
+      std::cout << m_array[i] << ' ';
+    std::cout << '\n';
+  }
+
+  virtual ~StaticArray_Base() = default;
+};
+
+template <typename T, int size>
+class StaticArray: public StaticArray_Base<T, size>
+{
+};
+
+template <int size>
+class StaticArray<double, size>: public StaticArray_Base<double, size>
+{
+public:
+
+  void print()
+  {
+    for (int i{ 0 }; i < size; ++i)
+      std::cout << std::scientific << this->m_array[i] << ' ';
+  // 注意：上面一行的 this-> prefix 是必须的。
+  // 查看 https://stackoverflow.com/a/6592617 或 https://isocpp.org/wiki/faq/templates#nondependent-name-lookup-members 可以了解更多的细节。
+    std::cout << '\n';
+  }
+};
+
+int main()
+{
+  StaticArray<int, 6> intArray{};
+
+  for (int count{ 0 }; count < 6; ++count)
+    intArray[count] = count;
+
+  intArray.print();
+
+  StaticArray<double, 4> doubleArray{};
+
+  for (int count{ 0 }; count < 4; ++count)
+    doubleArray[count] = (4.0 + 0.1 * count);
+
+  doubleArray.print();
+
+  return 0;
+}
+\end{lstlisting}
+
+这可以打印相同的内容，并且大大的减少了重复代码。
+
+\end{document}

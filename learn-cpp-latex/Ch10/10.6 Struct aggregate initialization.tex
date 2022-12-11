@@ -1,0 +1,198 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{6}{Struct aggregate initialization}
+
+\subsubsection*{数据成员默认不被初始化}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+struct Employee
+{
+    int id; // 注意：这里没有初始化
+    int age;
+    double wage;
+};
+
+int main()
+{
+    Employee joe; // 注意：这里也没有初始化器
+    std::cout << joe.id << '\n';  // 出现未定义行为
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{什么是聚合？}
+
+通用的编程中，\textbf{聚合数据类型} aggregate data type（也被称为 \textbf{aggregate}）
+是一种包含若干数据类型的任意类型。有些类型的聚合允许成员拥有不同的类型（例如 structs），
+而其它的需要所有成员必须只有一种类型（例如 arrays）。
+
+C++ 中，一个 aggregate 的定义更窄一些，也更复杂一些：
+
+- 是一种 class 类型（struct，class，或者 union），或者一种 array 类型（内建的 array 或者 `std::array`）。
+- 没有 private 或者 protected non-static 数据类型。
+- 没有用户声明或者继承的构造器。
+- 没有基础类。
+- 没有虚拟成员函数。
+
+\subsubsection*{struct 的聚合初始化}
+
+因为普通变量近可以存储单个类型，用户仅需要提供单个 initializer，而 struct 可以拥有若干成员，
+因此当定义 struct 类型的对象是，需要一种可以同时初始化若干成员的方法。
+
+Aggregates 使用的初始化方法被称为\textbf{聚合初始化} aggregate initialization。
+用户仅需要提供一个 \textbf{initializer list} 作为初始化器，并且其中由逗号分隔初始值，
+便可以进行 struct 初始化了。
+
+与普通变量可以拷贝初始化 copy-list initialized，直接初始化 direct initialized，
+或者列表初始化一样 list initialized，聚合初始化也拥有这三种形态的：
+
+\begin{lstlisting}[language=C++]
+struct Employee
+{
+    int id {};
+    int age {};
+    double wage {};
+};
+
+int main()
+{
+    Employee frank = { 1, 32, 60000.0 }; // 拷贝列表初始化使用等号 + 花括号
+    Employee robert ( 3, 45, 62500.0 );  // 直接初始化使用圆括号（C++20）
+    Employee joe { 2, 28, 45000.0 };     // 列表初始化使用使用花括号（推荐）
+
+    return 0;
+}
+\end{lstlisting}
+
+上述的每个初始化都是\textbf{依成员方向初始化}的，这就意味着 struct 中每个成员是依照声明的顺序进行初始化的。
+
+最佳实践：推荐使用（非拷贝）花括号初始化。
+
+\subsubsection*{列表初始化中的缺失初始化器}
+
+\begin{lstlisting}[language=C++]
+struct Employee
+{
+    int id {};
+    int age {};
+    double wage {};
+};
+
+int main()
+{
+    Employee joe { 2, 28 }; // joe.wage 将会被初始化成 0.0
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{Const structs}
+
+\begin{lstlisting}[language=C++]
+struct Rectangle
+{
+    double length {};
+    double width {};
+};
+
+int main()
+{
+    const Rectangle unit { 1.0, 1.0 };
+    const Rectangle zero { }; // 值初始化所有成员
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{指定式的初始化器（C++20）}
+
+C++20 新增了一种称为 \textbf{designated initializers} 的初始化 struct 的方式。
+
+\begin{lstlisting}[language=C++]
+struct Foo
+{
+    int a{ };
+    int b{ };
+    int c{ };
+};
+
+int main()
+{
+    Foo f1{ .a{ 1 }, .c{ 3 } }; // 可行：f.a = 1, f.b = 0（值初始化）, f.c = 3
+    Foo f2{ .b{ 2 }, .a{ 1 } }; // 错误：初始化顺序与结构体声明的顺序不匹配
+
+    return 0;
+}
+\end{lstlisting}
+
+Designated initializers 很好因为它们提供了某种程度的自文档的形式可以帮助用户避免不小心弄错初始化顺序。
+然而，designated initializers 同样也使得列表初始化变得非常散乱，因此这里不推荐其为最佳实践。
+
+最佳实践：当对 aggregate 添加新成员，安全的做法是在其定义的底部添加，
+这样可以确保初始化时，其它成员不会错位。
+
+\subsubsection*{通过 initializer 列表赋值}
+
+\begin{lstlisting}[language=C++]
+struct Employee
+{
+    int id {};
+    int age {};
+    double wage {};
+};
+
+int main()
+{
+    Employee joe { 1, 32, 60000.0 };
+
+    joe.age  = 33;      // Joe 过了个生日
+    joe.wage = 66000.0; // 也获得了升职
+
+    return 0;
+}
+\end{lstlisting}
+
+上述对于单个成员赋值是没有问题的，但是如果要更新多个成员不是那么方便。
+
+\begin{lstlisting}[language=C++]
+struct Employee
+{
+    int id {};
+    int age {};
+    double wage {};
+};
+
+int main()
+{
+    Employee joe { 1, 32, 60000.0 };
+    joe = { joe.id, 33, 66000.0 }; // Joe 过了个生日也获得了升职
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{通过 designated initializers 赋值（C++20）}
+
+\begin{lstlisting}[language=C++]
+struct Employee
+{
+    int id {};
+    int age {};
+    double wage {};
+};
+
+int main()
+{
+    Employee joe { 1, 32, 60000.0 };
+    joe = { .id = joe.id, .age = 33, .wage = 66000.0 }; // Joe 过了个生日也获得了升职
+
+    return 0;
+}
+\end{lstlisting}
+
+\end{document}

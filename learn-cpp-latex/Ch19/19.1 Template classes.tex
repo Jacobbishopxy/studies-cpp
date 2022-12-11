@@ -1,0 +1,333 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{1}{Template classes}
+
+\subsubsection*{模版与容器类}
+
+16.6 章节中学习到了如何使用组合 composition 来实现可以包含若干其他类实例的容器类。
+这里是一个简化版的代码：
+
+\begin{lstlisting}[language=C++]
+#ifndef INTARRAY_H
+#define INTARRAY_H
+
+#include <cassert>
+
+class IntArray
+{
+private:
+    int m_length{};
+    int* m_data{};
+
+public:
+
+    IntArray(int length)
+    {
+        assert(length > 0);
+        m_data = new int[length]{};
+        m_length = length;
+    }
+
+    // 不希望 IntArray 的拷贝允许被创建
+    IntArray(const IntArray&) = delete;
+    IntArray& operator=(const IntArray&) = delete;
+
+    ~IntArray()
+    {
+        delete[] m_data;
+    }
+
+    void erase()
+    {
+        delete[] m_data;
+        // 这里需要确保设置 m_data 为空指针，否则将会仍然指向已释放的内存！
+        m_data = nullptr;
+        m_length = 0;
+    }
+
+    int& operator[](int index)
+    {
+        assert(index >= 0 && index < m_length);
+        return m_data[index];
+    }
+
+    int getLength() const { return m_length; }
+};
+
+#endif
+\end{lstlisting}
+
+那么如果是想要创建一个 double 的数组呢？
+与 \acode{IntArray} 相比，仅有实质性不同的在于数据类型不同。
+创建一个模板类类似于创建模板函数。
+
+\begin{lstlisting}[language=C++]
+#ifndef ARRAY_H
+#define ARRAY_H
+
+#include <cassert>
+
+template <typename T> // 新增
+class Array
+{
+private:
+    int m_length{};
+    T* m_data{}; // 修改类型为 T
+
+public:
+
+    Array(int length)
+    {
+        assert(length > 0);
+        m_data = new T[length]{}; // 分配类型为 T 的对象的数组
+        m_length = length;
+    }
+
+    Array(const Array&) = delete;
+    Array& operator=(const Array&) = delete;
+
+    ~Array()
+    {
+        delete[] m_data;
+    }
+
+    void erase()
+    {
+        delete[] m_data;
+        m_data = nullptr;
+        m_length = 0;
+    }
+
+    T& operator[](int index) // 现在返回的是 T&
+    {
+        assert(index >= 0 && index < m_length);
+        return m_data[index];
+    }
+
+    // 模板化的 getLength() 函数在下方定义
+    int getLength() const;
+};
+
+// 成员函数定义在类的外部，需要它们自己的模版声明
+template <typename T>
+int Array<T>::getLength() const // 注意类名为 Array<T>，而不是 Array
+{
+  return m_length;
+}
+
+#endif
+\end{lstlisting}
+
+可以看到上述代码几乎与 \acode{IntArray} 相同，
+除了添加了模版声明以外，以及使用 T 更换了数据类型。
+
+注意除此之外还定义了 \acode{getLength()} 函数在类声明之外。
+这并不是必须的，但是新手程序员通常会卡在这里的语法上，因此这个案例具有指导意义。
+每个模板成员函数定义在类声明之外就需要其自身的模版声明。
+同时，注意模版数组的名称现在是 \acode{Array<T>}，而不是 \acode{Array}。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include "Array.h"
+
+int main()
+{
+  Array<int> intArray { 12 };
+  Array<double> doubleArray { 12 };
+
+  for (int count{ 0 }; count < intArray.getLength(); ++count)
+  {
+    intArray[count] = count;
+    doubleArray[count] = count + 0.5;
+  }
+
+  for (int count{ intArray.getLength() - 1 }; count >= 0; --count)
+    std::cout << intArray[count] << '\t' << doubleArray[count] << '\n';
+
+  return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+11     11.5
+10     10.5
+9       9.5
+8       8.5
+7       7.5
+6       6.5
+5       5.5
+4       4.5
+3       3.5
+2       2.5
+1       1.5
+0       0.5
+\end{lstlisting}
+
+模板类的实例化与模板函数一样 --
+编译器拓印一份所需的拷贝，将模板参数替换为用户所需的真实数据类型，接着编译该副本。
+如果没有使用模板类，编译器甚至不会编译它。
+
+模板类用来实现容器类是理想的，因为它高度期望容器可以对不同类型的数据有效，同样的模板也避免了大量重复代码。
+尽管语法很挫，同时报错信息可能会很隐晦，然而模板类是 C++ 中真正最好的最有用的特性。
+
+\subsubsection*{标准库中的模板类}
+
+现在已经覆盖了模板类，那么理解 \acode{std::vector<int>} 的真正意义就不难了 --
+它实际上就是一个模板类，二 \acode{int} 则是模板的类型参数！
+标准库中存在着大量的预定义的模板类可供使用。之后的章节会覆盖到它们。
+
+\subsubsection*{拆分模板类}
+
+一个模板既不是类也不是函数 -- 它是拓印用于创建类或者函数的。
+因此，它的工作方式与普通的类或者函数不一样。大多数情况下，这并不是什么问题。
+然而有一个地方是开发者通常容易出错的。
+
+非模板类时，通常的过程是放置类定义与头文件中，其成员函数定义放在同名的源文件中。
+这样的方式，类的源代码会以分隔项目文件的方式被编译。然而使用模板时，这样并不能工作。
+考虑下面的代码：
+
+Array.h:
+
+\begin{lstlisting}[language=C++]
+#ifndef ARRAY_H
+#define ARRAY_H
+
+#include <cassert>
+
+template <typename T>
+class Array
+{
+private:
+    int m_length{};
+    T* m_data{};
+
+public:
+
+    Array(int length)
+    {
+        assert(length > 0);
+        m_data = new T[length]{};
+        m_length = length;
+    }
+
+    Array(const Array&) = delete;
+    Array& operator=(const Array&) = delete;
+
+    ~Array()
+    {
+        delete[] m_data;
+    }
+
+    void erase()
+    {
+        delete[] m_data;
+
+        m_data = nullptr;
+        m_length = 0;
+    }
+
+    T& operator[](int index)
+    {
+        assert(index >= 0 && index < m_length);
+        return m_data[index];
+    }
+
+    int getLength() const;
+};
+
+# endif
+\end{lstlisting}
+
+Array.cpp:
+
+\begin{lstlisting}[language=C++]
+#include "Array.h"
+
+template <typename T>
+int Array<T>::getLength() const // 注意类名称为 Array<T>，而不是 Array
+{
+  return m_length;
+}
+\end{lstlisting}
+
+main.cpp:
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include "Array.h"
+
+int main()
+{
+  Array<int> intArray(12);
+  Array<double> doubleArray(12);
+
+  for (int count{ 0 }; count < intArray.getLength(); ++count)
+  {
+    intArray[count] = count;
+    doubleArray[count] = count + 0.5;
+  }
+
+  for (int count{ intArray.getLength() - 1 }; count >= 0; --count)
+    std::cout << intArray[count] << '\t' << doubleArray[count] << '\n';
+
+  return 0;
+}
+\end{lstlisting}
+
+上述程序可以被编译但是会有一个 linker 错误：
+
+\begin{lstlisting}
+unresolved external symbol "public: int __thiscall Array<int>::getLength(void)" (?GetLength@?\$Array@H@@QAEHXZ)
+\end{lstlisting}
+
+为了让编译器使用模板，编译器必须同时看到模板定义（不仅只是声明）以及用于实例化模板的模板类型。
+同时不要忘记 C++ 是单独的编译文件。
+当 \acode{Array.h} 头文件被 main 引入，模板类的定义被拷贝进 \acode{main.cpp}。
+当编译器如果看到两个模板实例，\acode{Array<int>} 与 \acode{Array<double>} 时，
+编译器会实例化它们，并将它们编译成 \acode{main.cpp} 中的一部分。
+然而当编译器分开编译 \acode{Array.cpp} 时，它并不知道需要的是 \acode{Array<int>} 与 \acode{Array<double>}，
+因此模板函数永远不会被实例化。
+因此获得了 linker 错误，这是因为编译器没有发现 \acode{Array<int>::getLength()} 与 \acode{Array<double>::getLength()} 的定义。
+
+有一些方法可以绕过这个问题。
+
+最简单的方法就是把所有模板类的代码放到头文件中（这个案例中就是将 \acode{Array.cpp} 的内容放进 \acode{Array.h} 中位于类的下方）。
+这样当 \#include 头文件时，所有模板代码都会在同一个地方。这么做的好处就是简单。
+这么做的坏处是如果模板类在很多地方被使用的时候，将会得到大量模板类的本地副本，
+这增加了编译时间以及 link 次数（linker 应该会移除重复的定义，因此并不会使可执行文件膨胀起来）。
+这是推荐的解决方案，直到编译器或 link 次数开始成为一个问题时。
+
+如果将 \acode{Array.cpp} 代码放进 \acode{Array.h} 头文件使得头文件非常大且凌乱，
+另一种做法是移动 \acode{Array.cpp} 至新的名为 \acode{Array.inl} 文件中（.inl 意为内联 inline），
+接着将 \acode{Array.inl} 包含在 \acode{Array.h} 头文件的尾部（头文件保护符之内）。
+这将返回与将所有代码放入头文件中，产生同样的结果，并给代码带来了更好的管理。
+
+小贴士：如果使用的是 .inl 方法并触发关于重复定义的编译错误时，编译器大概率是将 .inl 文件视为了代码文件而成为了项目的一部分。
+这个结果是 .inl 被编译了两次：第一次是编译了 .inl，还有一次是当 .cpp 文件引用 .inl 文件时被编译。如果这种情况发生了，
+那么则需要从 build 中排除 .inl 文件。这通常是可以由编辑器中对该文件点击右键并选择其属性来完成的。
+
+另一种方法是使用三文件处理法。模板类定义放在头文件，模板类成员函数放在代码文件，接着添加第三个文件，包含所有所需的实例化的类：
+
+templates.cpp:
+
+\begin{lstlisting}[language=C++]
+// 确保所有 Array 模板定义都可以被看见
+#include "Array.h"
+#include "Array.cpp" // 这里破坏了最佳实践，但是仅在此一处
+
+// 在这里 #include 其他所有需要的 .h 与 .cpp 模板定义
+
+template class Array<int>;    // 显式实例化模板 Array<int>
+template class Array<double>; // 显式实例化模板 Array<double>
+
+// 这里实例化其他模板
+\end{lstlisting}
+
+这个方法有可能更高效（取决于编译器和 linker 是如何处理模板与重复定义的），
+但是需要为每个项目都维护一个 \acode{templates.cpp} 文件。
+
+\end{document}

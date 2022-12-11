@@ -1,0 +1,185 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{1}{std::string and std::wstring}
+
+标准库包含了很多有用的类 --
+但是可能最有用的就是 \acode{std::string}（与 \acode{std::wstring}）了，
+其身为一个字符串类提供了很多操作用于赋值、比较、以及修改字符串。
+本章开始深入讲解字符串类。
+
+注意：C-style 字符串会被归类为“C-style strings”，
+而 \acode{std::string}（与 \acode{std::wstring}）被归为“strings”。
+
+\subsubsection*{字符串类的动机}
+
+之前的章节中覆盖了 C-style strings，即使用字符数组来存储字符串的字符。
+如果尝试了它，将会很快的发现一个结论，那就是它相当的难用，容易变得混乱，并且难以调试。
+
+C-style 字符串拥有很多短处，最主要都是围绕在必须手动管理内存这个问题上。
+例如赋值字符串“hello!”给缓存，那么首先需要动态分配正确长度的缓存：
+
+\begin{lstlisting}[language=C++]
+char* strHello { new char[7] };
+\end{lstlisting}
+
+不要忘了计算额外的字符用作于空字符终结符！
+
+接着需要拷贝值：
+
+\begin{lstlisting}[language=C++]
+strcpy(strHello, "hello!");
+\end{lstlisting}
+
+更重要的是缓存必须足够大，不然就会溢出！
+
+当然了因为字符串是动态分配的，当使用完成后记住必须要正确的释放掉它。
+
+\begin{lstlisting}[language=C++]
+delete[] strHello;
+\end{lstlisting}
+
+记住是数组删除而不是普通删除！
+
+此外很多 C 语言提供的操作符比如赋值与比较，并不在 C-style 字符串上生效。
+有时看起来生效了但是实际上产生的是错误结果 --
+例如使用 \acode{==} 来比较两个 C-style 字符串，实际上却是在做指针比较而不是字符串比较。
+使用操作符= 赋值另一个 C-style 字符串看起来第一次生效了，但是实际上做的是指针拷贝（浅拷贝），并不如预期的那样。
+这些都会导致程序崩溃，而难以找到错误并进行调试！
+
+\subsubsection*{String 概述}
+
+标准库中所有字符串的功能都位于 \acode{<string>} 头文件中：
+
+\begin{lstlisting}[language=C++]
+# include <string>
+\end{lstlisting}
+
+其中包含了 3 中不同的字符类。首先是一个名为 \acode{basic\_string} 的模板基类：
+
+\begin{lstlisting}[language=C++]
+namespace std
+{
+    template<class charT, class traits = char_traits<charT>, class Allocator = allocator<charT> >
+        class basic_string;
+}
+\end{lstlisting}
+
+用户不需要直接使用该类，暂时无需担心 traits 或 Allocator。默认值猪狗应对大多数情况。
+
+其中标准库中有两个推荐的 \acode{basic\_string}：
+
+\begin{lstlisting}[language=C++]
+namespace std
+{
+    typedef basic_string<char> string;
+    typedef basic_string<wchar_t> wstring;
+}
+\end{lstlisting}
+
+这两个类才是用户真实使用的。\acode{std::string} 用于标准 ascii 以及 utf-8 字符串；
+\acode{std::wstring} 用于宽字符/unicode（utf-16）字符串。
+
+尽管用户将直接使用 \acode{std::string} 与 \acode{std::wstring}，
+所有的字符串功能都是实现在 \acode{basic\_string} 类中。
+\acode{std::string} 与 \acode{std::wstring} 可以直接通过虚函数来访问这些功能，
+因此所有展现在 \acode{basic\_string} 上的函数都可以在它们身上生效。
+然而因为 \acode{basic\_string} 是一个模板类，
+这也意味着当用户使用 string 或 wstring 时的语法错误，编译器会生成恐怖的模板错误。
+不要害怕这些错误，它们只是看上去可怕而已！
+
+以下是字符串类的所有函数。大多数函数都有若干处理不同类型输入的功能，这些将会在下一节深入。
+
+\begin{center}
+    \begin{tiny}
+        \begin{tabularx}{ 1\textwidth}{
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X |
+            }
+            \hline
+            函数                         & 效果                                                                                  \\
+            \hline
+            \multicolumn{2}{|c|}{Creation and destruction }                                                                  \\
+            \hline
+            (constructor)              & Create or copy a string                                                             \\
+            (destructor)               & Destroy a string                                                                    \\
+            \hline
+            \multicolumn{2}{|c|}{Size and capacity}                                                                          \\
+            \hline
+            capacity()                 & Returns the number of characters that can be held without reallocation              \\
+            empty()                    & Returns a boolean indicating whether the string is empty                            \\
+            length(), size()           & Returns the number of characters in string                                          \\
+            max\_size()                & Returns the maximum string size that can be allocated                               \\
+            reserve()                  & Expand or shrink the capacity of the string                                         \\
+            \hline
+            \multicolumn{2}{|c|}{Element access}                                                                             \\
+            \hline
+            $\left[\right]$, at()      & Accesses the character at a particular index                                        \\
+            \hline
+            \multicolumn{2}{|c|}{Modification}                                                                               \\
+            \hline
+            =, assign()                & Assigns a new value to the string                                                   \\
+            +=, append(), push\_back() & Concatenates characters to end of the string                                        \\
+            insert()                   & Inserts characters at an arbitrary index in string                                  \\
+            clear()                    & Delete all characters in the string                                                 \\
+            erase()                    & Erase characters at an arbitrary index in string                                    \\
+            replace()                  & Replace characters at an arbitrary index with other characters                      \\
+            resize()                   & Expand or shrink the string (truncates or adds characters at end of string)         \\
+            swap()                     & Swaps the value of two strings                                                      \\
+            \hline
+            \multicolumn{2}{|c|}{Input and Output}                                                                           \\
+            \hline
+            >>, getline()              & Reads values from the input stream into the string                                  \\
+            <<                         & Writes string value to the output stream                                            \\
+            c\_str()                   & Returns the contents of the string as a NULL-terminated C-style string              \\
+            copy()                     & Copies contents (not NULL-terminated) to a character array                          \\
+            data()                     & Same as c\_str(). The non-const overload allows writing to the returned string.     \\
+            \hline
+            \multicolumn{2}{|c|}{String comparison}                                                                          \\
+            \hline
+            ==, !=                     & Compares whether two strings are equal/unequal (returns bool)                       \\
+            <, <=, > >=                & Compares whether two strings are less than / greater than each other (returns bool) \\
+            compare()                  & Compares whether two strings are equal/unequal (returns -1, 0, or 1)                \\
+            \hline
+            \multicolumn{2}{|c|}{Substrings and concatenation}                                                               \\
+            \hline
+            +                          & Concatenates two strings                                                            \\
+            substr()                   & Returns a substring                                                                 \\
+            \hline
+            \multicolumn{2}{|c|}{Searching}                                                                                  \\
+            \hline
+            find()                     & Find index of first character/substring                                             \\
+            find\_first\_of()          & Find index of first character from a set of characters                              \\
+            find\_first\_not\_of()     & Find index of first character not from a set of characters                          \\
+            find\_last\_of()           & Find index of last character from a set of characters                               \\
+            find\_last\_not\_of()      & Find index of last character not from a set of characters                           \\
+            rfind()                    & Find index of last character/substring                                              \\
+            \hline
+            \multicolumn{2}{|c|}{Iterator and allocator support}                                                             \\
+            \hline
+            begin(), end()             & Forward-direction iterator support for beginning/end of string                      \\
+            get\_allocator()           & Returns the allocator                                                               \\
+            rbegin(), rend()           & Reverse-direction iterator support for beginning/end of string                      \\
+            \hline
+        \end{tabularx}
+    \end{tiny}
+\end{center}
+
+虽然标准库的字符串类提供了非常多的功能，但是有一些被省略了的功能却值得注意：
+
+\begin{itemize}
+    \item 正则表达式的支持
+    \item 从数字创建字符串的构造函数
+    \item 首字母大写/大写/小写转换函数
+    \item 大小写不敏感的比较
+    \item 词语切分/分割字符成数组
+    \item 获取字符串左侧或右侧部分的简单函数
+    \item 空格修剪
+    \item 标准化字符串 sprintf 风格
+    \item utf-8 与 utf-16 间的互相转换
+\end{itemize}
+
+对于上述这些需求，需要用户自己编写函数，或者是转换字符串为 C-style 字符串（使用 \acode{c\_str()}）并使用 C 所提供的这些功能的函数。
+
+\end{document}

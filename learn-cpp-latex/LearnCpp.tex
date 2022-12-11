@@ -1,0 +1,330 @@
+\PassOptionsToPackage{quiet}{fontspec}
+\documentclass[UTF8]{ctexart}
+
+% 页面大小、宽距等
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+% 字体
+\usepackage{lmodern}
+% 字体
+\usepackage{amsfonts}
+% 字体颜色
+\usepackage{xcolor}
+% 图形插入
+\usepackage{graphicx}
+% 引入图片文件夹
+\graphicspath{\subfix{./images/}}
+% 代码引用
+\usepackage{listings}
+% 外部链接
+\usepackage{hyperref}
+% 表格
+\usepackage{tabularx}
+% 表格合并行
+\usepackage{multirow}
+% 多文件处理（放置在所有依赖的末尾）
+\usepackage{subfiles}
+
+
+\title{Learn C++}
+\author{Jacob Bishop}
+\date{2022-09-01}
+
+% adding style
+\usepackage{./style}
+\lstset{style=lcpp}
+
+% a new command which severs arbitrary section number
+\newcommand{\asection}[2]{
+  \setcounter{section}{#1}
+  \addtocounter{section}{-1}
+  \section{#2}
+}
+
+% a new command which severs arbitrary subsection number
+\newcommand{\asubsection}[2]{
+  \setcounter{subsection}{#1}
+  \addtocounter{subsection}{-1}
+  \subsection{#2}
+}
+
+% a new command which simplify \lstinline
+\newcommand{\acode}[1]{
+  \lstinline[basicstyle=\ttfamily]{#1}
+}
+
+\begin{document}
+
+\maketitle
+
+\section{C++ Basics}
+
+\subfile{Ch01/1.1 Statements and the structure of a program}
+\subfile{Ch01/1.3 Introduction to objects and variables}
+\subfile{Ch01/1.4 Variable assignment and initialization}
+\subfile{Ch01/1.7 Keywords and naming identifiers}
+
+\newpage
+
+\section{Functions and Files}
+
+\subfile{Ch02/2.1 Introduction to functions}
+\subfile{Ch02/2.7 Forward declarations and definitions}
+\subfile{Ch02/2.9 Naming collisions and an introduction to namespaces}
+\subfile{Ch02/2.10 Introduction to the preprocessor}
+\newpage % 为了使 2.11 图片正常显示
+\subfile{Ch02/2.11 Header files}
+\subfile{Ch02/2.12 Header guards}
+\subfile{Ch02/2.13 How to design your first programs}
+
+\newpage
+
+\section{Debugging C++ Programs}
+
+\subfile{Ch03-05/3.2 The debugging process}
+
+\newpage
+
+\section{Fundamental Data Types}
+
+\subfile{Ch03-05/4.1 Introduction to fundamental data types}
+\subfile{Ch03-05/4.3 Object sizes and the sizeof operator}
+\subfile{Ch03-05/4.14 Compile-time constants, constant expressions, and constexpr}
+
+\newpage
+
+\section{Operators}
+
+\subfile{Ch03-05/5.1 Operator precedence and associativity}
+
+\newpage
+
+\section{Scope, Duration, and Linkage}
+
+\subfile{Ch06/6.1 Compound statements(blocks)}
+\subfile{Ch06/6.2 User-defined namespaces and the scope resolution operator}
+\subfile{Ch06/6.6 Internal linkage}
+\subfile{Ch06/6.7 External linkage and variable forward declarations}
+\subfile{Ch06/6.9 Sharing global constants across multiple files (using inline variables)}
+\subfile{Ch06/6.14 Constexpr and consteval functions}
+\subfile{Ch06/6.15 Unnamed and inline namespaces}
+
+\newpage
+
+\section{Control Flow and Error Handling}
+
+\subfile{Ch07-08/7.1 Control flow introduction}
+
+\newpage
+
+\section{Type Conversion and Function Overloading}
+
+\subfile{Ch07-08/8.5 Explicit type conversion (casting) and static_cast}
+\subfile{Ch07-08/8.6 Typedefs and type aliases}
+\subfile{Ch07-08/8.9 Introduction to function overloading}
+\subfile{Ch07-08/8.10 Function overload differentiation}
+\subfile{Ch07-08/8.11 Function overload resolution and ambiguous matches}
+\subfile{Ch07-08/8.13 Function templates}
+\subfile{Ch07-08/8.14 Function template instantiation}
+\subfile{Ch07-08/8.15 Function templates with multiple template types}
+
+\newpage
+
+\section{Compound Types: References and Pointers}
+
+\subfile{Ch09/9.1 Introduction to compound data types}
+\subfile{Ch09/9.2 Value categories (lvalues and rvalues)}
+\subfile{Ch09/9.3 Lvalue references}
+\subfile{Ch09/9.4 Lvalue references to const}
+\subfile{Ch09/9.5 Pass by lvalue reference}
+\subfile{Ch09/9.6 Introduction to pointers}
+\subfile{Ch09/9.7 Null pointers}
+\subfile{Ch09/9.8 Pointers and const}
+\subfile{Ch09/9.9 Pass by address}
+\subfile{Ch09/9.11 Return by reference and return by address}
+\subfile{Ch09/9.12 Type deduction with pointers, references, and const}
+
+\newpage
+
+\section{Compound Types: Enums and Structs}
+
+\subfile{Ch10/10.2 Unscoped enumerations}
+\subfile{Ch10/10.3 Unscoped enumeration input and output}
+\subfile{Ch10/10.4 Scoped enumerations (enum classes)}
+\subfile{Ch10/10.5 Introduction to structs, members, and member selection}
+\subfile{Ch10/10.6 Struct aggregate initialization}
+\subfile{Ch10/10.7 Default member initialization}
+\subfile{Ch10/10.8 Struct passing and miscellany}
+\subfile{Ch10/10.9 Member selection with pointers and references}
+\subfile{Ch10/10.10 Class templates}
+\subfile{Ch10/10.11 Class template argument deduction (CTAD) and deduction guides}
+
+\newpage
+
+\section{Arrays, Strings, and Dynamic Allocation}
+
+\subfile{Ch11/11.1 Arrays}
+\subfile{Ch11/11.3 Arrays and loops}
+\subfile{Ch11/11.4 Sorting an array using selection sort}
+\subfile{Ch11/11.8 Pointers and arrays}
+\subfile{Ch11/11.9 Pointer arithmetic and array indexing}
+\subfile{Ch11/11.11 Dynamic memory allocation with new and delete}
+\subfile{Ch11/11.12 Dynamically allocating arrays}
+\subfile{Ch11/11.13 For-each loops}
+\subfile{Ch11/11.14 Void pointers}
+\subfile{Ch11/11.16 An introduction to std::array}
+\subfile{Ch11/11.17 An introduction to std::vector}
+\subfile{Ch11/11.18 Introduction to iterators}
+\subfile{Ch11/11.19 Introduction to standard library algorithms}
+
+\newpage
+
+\section{Functions}
+
+\subfile{Ch12/12.1 Function Pointers}
+\subfile{Ch12/12.2 The stack and the heap}
+\subfile{Ch12/12.3 std::vector capacity and stack behavior}
+\subfile{Ch12/12.4 Recursion}
+\subfile{Ch12/12.5 Command line arguments}
+\subfile{Ch12/12.7 Introduction to lambdas (anonymous functions)}
+\subfile{Ch12/12.8 Lambda captures}
+
+\newpage
+
+\section{Basic Object-oriented Programming}
+
+\subfile{Ch13/13.2 Classes and class members}
+\subfile{Ch13/13.3 Public vs private access specifiers}
+\subfile{Ch13/13.4 Access functions and encapsulation}
+\subfile{Ch13/13.5 Constructors}
+\subfile{Ch13/13.6 Constructor member initializer lists}
+\subfile{Ch13/13.7 Non-static member initialization}
+\subfile{Ch13/13.8 Overlapping and delegating constructors}
+\subfile{Ch13/13.9 Destructors}
+\subfile{Ch13/13.10 The hidden this pointer}
+\subfile{Ch13/13.11 Class code and header files}
+\subfile{Ch13/13.12 Const class objects and member functions}
+\subfile{Ch13/13.13 Static member variables}
+\subfile{Ch13/13.14 Static member functions}
+\subfile{Ch13/13.15 Friend functions and classes}
+\subfile{Ch13/13.16 Anonymous objects}
+\subfile{Ch13/13.17 Nested types in classes}
+
+\newpage
+
+\section{Operator overloading}
+
+\subfile{Ch14/14.1 Introduction to operator overloading}
+\subfile{Ch14/14.2 Overloading the arithmetic operators using friend functions}
+\subfile{Ch14/14.3 Overloading operators using normal functions}
+\subfile{Ch14/14.4 Overloading the IO operators}
+\subfile{Ch14/14.5 Overloading operators using member functions}
+% \subfile{Ch14/}
+
+\newpage
+
+\section{Move Semantics and Smart Pointers}
+
+\subfile{Ch15/15.1 Introduction to smart pointers and move semantics}
+\subfile{Ch15/15.2 R-value references}
+\subfile{Ch15/15.3 Move constructors and move assignment}
+\subfile{Ch15/15.4 std::move}
+\subfile{Ch15/15.5 std::move_if_noexcept}
+\subfile{Ch15/15.6 std::unique_ptr}
+\subfile{Ch15/15.7 std::shared_ptr}
+\subfile{Ch15/15.8 Circular dependency issues with std::shared_ptr, and std::weak_ptr}
+
+\newpage
+
+\section{An Introduction to Object Relationships}
+
+\subfile{Ch16/16.2 Composition}
+\subfile{Ch16/16.3 Aggregation}
+\subfile{Ch16/16.4 Association}
+\subfile{Ch16/16.5 Dependencies}
+\subfile{Ch16/16.6 Container classes}
+\subfile{Ch16/16.7 std::initializer_list}
+
+\newpage
+
+\section{Inheritance}
+
+\subfile{Ch17/17.2 Basic inheritance in C++}
+\subfile{Ch17/17.3 Order of construction of derived classes}
+\subfile{Ch17/17.4 Constructors and initialization of derived classes}
+\subfile{Ch17/17.5 Inheritance and access specifiers}
+\subfile{Ch17/17.6 Adding new functionality to a derived class}
+\subfile{Ch17/17.7 Calling inherited functions and overriding behavior}
+\subfile{Ch17/17.8 Hiding inherited functionality}
+\subfile{Ch17/17.9 Multiple inheritance}
+
+\newpage
+
+\section{Virtual Functions}
+
+\subfile{Ch18/18.1 Pointers and references to the base class of derived objects}
+\subfile{Ch18/18.2 Virtual functions and polymorphism}
+\subfile{Ch18/18.3 The override and final specifiers, and covariant return types}
+\subfile{Ch18/18.4 Virtual destructors, virtual assignment, and overriding virtualization}
+\subfile{Ch18/18.5 Early binding and late binding}
+\subfile{Ch18/18.6 The virtual table}
+\subfile{Ch18/18.7 Pure virtual functions, abstract base classes, and interface classes}
+\subfile{Ch18/18.8 Virtual base classes}
+\subfile{Ch18/18.9 Object slicing}
+\subfile{Ch18/18.10 Dynamic casting}
+\subfile{Ch18/18.11 Printing inherited classes using operator<<}
+
+\newpage
+
+\section{Templates and Classes}
+
+\subfile{Ch19/19.1 Template classes}
+\subfile{Ch19/19.2 Template non-type parameters}
+\subfile{Ch19/19.3 Function template specialization}
+\subfile{Ch19/19.4 Class template specialization}
+\subfile{Ch19/19.5 Partial template specialization}
+\subfile{Ch19/19.6 Partial template specialization for pointers}
+
+\newpage
+
+\section{Exceptions}
+
+\subfile{Ch20/20.1 The need for exceptions}
+\subfile{Ch20/20.2 Basic exception handling}
+\subfile{Ch20/20.3 Exceptions, functions, and stack unwinding}
+\subfile{Ch20/20.4 Uncaught exceptions and catch-all handlers}
+\subfile{Ch20/20.5 Exceptions, classes, and inheritance}
+\subfile{Ch20/20.6 Rethrowing exceptions}
+\subfile{Ch20/20.7 Function try blocks}
+\subfile{Ch20/20.8 Exception dangers and downsides}
+\subfile{Ch20/20.9 Exception specifications and noexcept}
+
+\newpage
+
+\section{The Standard Template Library}
+
+\subfile{Ch21/21.1 The Standard Library}
+\subfile{Ch21/21.2 STL containers overview}
+\subfile{Ch21/21.3 STL iterators overview}
+\subfile{Ch21/21.4 STL algorithms overview}
+
+\newpage
+
+\section{std::string}
+
+\subfile{Ch22/22.1 std::string and std::wstring}
+\subfile{Ch22/22.2 std::string construction and destruction}
+\subfile{Ch22/22.3 std::string length and capacity}
+\subfile{Ch22/22.4 std::string character access and conversion to C-style arrays}
+\subfile{Ch22/22.5 std::string assignment and swapping}
+\subfile{Ch22/22.6 std::string appending}
+\subfile{Ch22/22.7 std::string inserting}
+
+\newpage
+
+\section{Input and Output (I/O)}
+
+\newpage
+
+\section{Miscellaneous Subjects}
+
+\end{document}

@@ -1,0 +1,120 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{7}{Null pointers}
+
+除了内存地址，指针还可以保存一个额外的东西：null 值。
+\textbf{null 值}（简略为\textbf{null}）是一个特别的值意为没有值。
+当一个指针存储了 null 值，意味着没有指向任何东西。
+这样的指针被称为\textbf{空指针} null pointer。
+
+创建空指针最简单的方法是使用值实例化：
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    int* ptr {}; // ptr 现在是一个空指针，没有保存任何地址
+
+    return 0;
+}
+\end{lstlisting}
+
+最佳实践：如果不初始化一个有效的对象地址时，初始化空指针。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    int* ptr {}; // ptr 现在是一个空指针，没有保存任何地址
+
+    int x { 5 };
+    ptr = &x; // ptr 指向对象 x（不再是空指针）
+
+    std::cout << *ptr << '\n'; // 通过解引用 ptr 打印值
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{nullptr 关键字}
+
+类似于关键字 \acode{true} 和 \acode{false} 代表布尔字面值，\textbf{nullptr} 关键字代表一个空指针的字面值。
+使用 \acode{nullptr} 可以显式初始化或赋值空值给一个指针。
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    int* ptr { nullptr }; // 可以使用 nullptr 初始化一个空指针
+
+    int value { 5 };
+    int* ptr2 { &value }; // ptr2 是一个有效指针
+    ptr2 = nullptr; // 可以赋值 nullptr 使指针变为空指针
+
+    someFunction(nullptr); // 也可以传递 nullptr 给函数，其入参是指针类型
+
+    return 0;
+}
+\end{lstlisting}
+
+最佳实践：当需要空指针字面值用于初始化，赋值或者传递空指针给函数式，使用 \acode{nullptr}。
+
+\subsubsection*{解引用空指针导致未定义的行为}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    int* ptr {}; // 创建一个空指针
+    std::cout << *ptr << '\n'; // 解引用空指针
+
+    return 0;
+}
+\end{lstlisting}
+
+警告：任何时候使用指针时，需要额外的消息代码中没有解引用空指针或者悬垂指针，
+因为都会导致未定义的行为（可能导致程序崩溃）。
+
+\subsubsection*{检查空指针}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    int x { 5 };
+    int* ptr { &x };
+
+    // 指针转换为布尔值 false 如果它们为 null，反之为 true
+    if (ptr == nullptr) // 显式测试等式
+        std::cout << "ptr is null\n";
+    else
+        std::cout << "ptr is non-null\n";
+
+    int* nullPtr {};
+    std::cout << "nullPtr is " << (nullPtr==nullptr ? "null\n" : "non-null\n"); // 显式测试等式
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{使用 nullptr 避免悬垂指针}
+
+\begin{lstlisting}[language=C++]
+// 假设 ptr 是一个指针有可能为空指针
+if (ptr) // 如果 ptr 不是一个空指针
+    std::cout << *ptr << '\n'; // 可以被解引用
+else
+    // 做一些其它的事情，只要不是解引用 ptr（打印错误，等等）
+\end{lstlisting}
+
+最佳实践：一个指针应该要么存储有效对象的地址，要么设为 nullptr。
+这样只需要测试其是否为 null，可以假设任何非空指针都有效。
+
+\subsubsection*{如果可能的话，使用引用而不是指针}
+
+最佳实践：推荐引用而不是指针，除非由指针提供的额外功能需要被用到。
+
+\end{document}

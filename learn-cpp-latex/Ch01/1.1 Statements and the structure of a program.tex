@@ -1,0 +1,27 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{1}{Statements and the structure of a program}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+   std::cout << "Hello world!";
+   return 0;
+}
+\end{lstlisting}
+
+行 1 是一个被称为预处理器指令的特殊类型。其代表可以使用 iostream 库的所有内容，该库为 C++ 标准库的一部分，用于读写 console。该库用于第五行的 \acode{std::cout}。
+
+行 3 告诉编译器用户准备定义一个 \textbf{main} 函数，所有的 C++ 程序必须拥有一个 \textbf{main} 函数否则会连接失败。
+
+行 4 和 7 告诉编译器 \textbf{main} 的函数主体。
+
+行 5 为 \textbf{main} 中的第一个声明，也是第一个声明在运行程序时被执行。 \acode{std::cout} (character output) 以及 \acode{<<} 运算符使用户可以发送单词或者数字输出到终端。
+
+行 6 为返回声明。当一个可执行程序结束运行时，程序会返回一个值给操作系统，用以通知其运行是否成功。值 0 意味着“所有运行皆正常！”。该行为程序运行的最后一个声明。
+
+\end{document}

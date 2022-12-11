@@ -1,0 +1,118 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{5}{Introduction to structs, members, and member selection}
+
+\textbf{结构体} struct是程序定义类型，允许用户打包若干变量在同一个类型内。
+
+\subsubsection*{定义结构体}
+
+\begin{lstlisting}[language=C++]
+struct Employee
+{
+    int id {};
+    int age {};
+    double wage {};
+};
+\end{lstlisting}
+
+\acode{struct} 关键字告诉编译器正在定义一个名为 \acode{Employee} 的结构体。
+
+在花括号内，定义该结构体内所包含的变量。这些变量是结构体的一部分，
+被称为\textbf{数据成员} data members（或\textbf{成员变量} member variables）。
+
+最后以分号结束结构体类型的定义。
+
+\subsubsection*{定义结构体对象}
+
+\begin{lstlisting}[language=C++]
+Employee joe; // Employee 为类型，joe 为变量名
+\end{lstlisting}
+
+\subsubsection*{访问成员}
+
+\begin{lstlisting}[language=C++]
+struct Employee
+{
+    int id {};
+    int age {};
+    double wage {};
+};
+
+int main()
+{
+    Employee joe;
+
+    return 0;
+}
+\end{lstlisting}
+
+上述例子中，\acode{joe} 意为整个结构体对象（包含了成员变量）。
+访问成员变量需要使用\textbf{成员选择操作符} member selection operator（\acode{.}）
+介于结构体变量名与成员名之间。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+struct Employee
+{
+    int id {};
+    int age {};
+    double wage {};
+};
+
+int main()
+{
+    Employee joe;
+
+    joe.age = 32;
+
+    std::cout << joe.age << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+struct Employee
+{
+    int id {};
+    int age {};
+    double wage {};
+};
+
+int main()
+{
+    Employee joe;
+    joe.id = 14;
+    joe.age = 32;
+    joe.wage = 60000.0;
+
+    Employee frank;
+    frank.id = 15;
+    frank.age = 28;
+    frank.wage = 45000.0;
+
+    int totalAge { joe.age + frank.age };
+
+    if (joe.wage > frank.wage)
+        std::cout << "Joe makes more than Frank\n";
+    else if (joe.wage < frank.wage)
+        std::cout << "Joe makes less than Frank\n";
+    else
+        std::cout << "Joe and Frank make the same amount\n";
+
+    // Frank 升职了
+    frank.wage += 5000.0;
+
+    // 今天是 Joe 的生日
+    ++joe.age; // 使用 pre-increment 来增加 Joe 的年龄
+
+    return 0;
+}
+\end{lstlisting}
+
+\end{document}

@@ -1,0 +1,120 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{1}{Operator precedence and associativity}
+
+\subsubsection*{运算符优先级}
+
+一个表达式中带有多个运算符可以被称为\textbf{组合表达式} compound expression。
+
+\subsubsection*{运算符结合律}
+
+在一个表达式中，如果两个运算符拥有相同优先级并且互相关联，
+运算符\textbf{结合律}则会告知编译器是从左至右或是从右至左做计算。
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Prec Ass                    & Operator            & Description                       & Pattern                               \\
+      \hline
+      \multirow{2}{5em}{1 L->R}   & $::$                & Global scope (unary)              & name                                  \\
+                                  & $::$                & Namespace scope (binary)          & class\_name member\_name              \\
+      \hline
+      \multirow{19}{5em}{2 L->R}  & $()$                & Parentheses                       & (expression)                          \\
+                                  & $()$                & Function call                     & function\_name(params)                \\
+                                  & $()$                & Initialization                    & type name(expression)                 \\
+                                  & $()$                & Uniform initialization (C++11)    & type name(expression)                 \\
+                                  & $type()$            & Functional cast                   & new\_type(expression)                 \\
+                                  & $type()$            & Functional cast (C++11)           & new\_type{expression}                 \\
+                                  & $[]$                & Array subscript                   & pointer[expression]                   \\
+                                  & $.$                 & Member access from object         & object.member\_name                   \\
+                                  & $->$                & Member access from object ptr     & object\_pointer->member\_name         \\
+                                  & $++$                & Post-increment                    & lvalue++                              \\
+                                  & $--$                & Post-decrement                    & lvalue--                              \\
+                                  & $typeid$            & Run-time type information         & typeid(type) or typeid(expr)          \\
+                                  & $const\_cast$       & Cast away const                   & const\_cast<type>(expr)               \\
+                                  & $dynamic\_cast$     & Run-time type-checked cast        & dynamic\_cast<type>(expr)             \\
+                                  & $reinterpret\_cast$ & Cast one type to another          & reinterpret\_cast<type>(expr)         \\
+                                  & $static\_cast$      & Compile-time type-checked cast    & static\_cast<type>(expr)              \\
+                                  & $sizeof...$         & Get parameter pack size           & sizeof…(expression)                   \\
+                                  & $noexcept$          & Compile-time exception check      & noexcept(expression)                  \\
+                                  & $alignof$           & Get type alignment                & alignof(Type)                         \\
+      \hline
+      \multirow{15}{5em}{3 R->L}  & $+$                 & Unary plus                        & +expression                           \\
+                                  & $-$                 & Unary minus                       & -expression                           \\
+                                  & $++$                & Pre-increment                     & ++lvalue                              \\
+                                  & $--$                & Pre-decrement                     & --lvalue                              \\
+                                  & $!$                 & Logical NOT                       & !expression                           \\
+                                  & $~$                 & Bitwise NOT                       & ~expression                           \\
+                                  & $(type)$            & C-style cast                      & (new\_type)expression                 \\
+                                  & $sizeof$            & Size in bytes                     & sizeof(type) or sizeof(expr)          \\
+                                  & $co\_await$         & Await asynchronous call           & co\_await expression                  \\
+                                  & $\&$                & Address of                        & \&lvalue                              \\
+                                  & $*$                 & Dereference                       & *expression                           \\
+                                  & $new$               & Dynamic memory allocation         & new type                              \\
+                                  & $new[]$             & Dynamic array allocation          & new type[expression]                  \\
+                                  & $delete$            & Dynamic memory deletion           & delete pointer                        \\
+                                  & $delete[]$          & Dynamic array deletion            & delete[] pointer                      \\
+      \hline
+      \multirow{2}{5em}{4 L->R}   & $->*$               & Member pointer selector           & object\_pointer->*pointer\_to\_member \\
+                                  & $.*$                & Member object selector            & object.*pointer\_to\_member           \\
+      \hline
+      \multirow{3}{5em}{5 L->R}   & $*$                 & Multiplication                    & expression * expression               \\
+                                  & $/$                 & Division                          & expression / expression               \\
+                                  & $\%$                & Modulus                           & expression \% expression              \\
+      \hline
+      \multirow{2}{5em}{6 L->R}   & $+$                 & Addition                          & expression + expression               \\
+                                  & $-$                 & Subtraction                       & expression - expression               \\
+      \hline
+      \multirow{2}{5em}{7 L->R}   & $<<$                & Bitwise shift left                & expression << expression              \\
+                                  & $>>$                & Bitwise shift right               & expression >> expression              \\
+      \hline
+      8 L->R                      & $<=>$               & Three-way comparison              & expression <=> expression             \\
+      \hline
+      \multirow{4}{5em}{9 L->R}   & $<$                 & Comparison less than              & expression < expression               \\
+                                  & $<=$                & Comparison less than or equals    & expression <= expression              \\
+                                  & $>$                 & Comparison greater than           & expression > expression               \\
+                                  & $>=$                & Comparison greater than or equals & expression >= expression              \\
+      \hline
+      \multirow{2}{5em}{10 L->R}  & $==$                & Equality                          & expression == expression              \\
+                                  & $!=$                & Inequality                        & expression != expression              \\
+      \hline
+      11 L->R                     & $\&$                & Bitwise AND                       & expression \& expression              \\
+      \hline
+      12 L->R                     & $\wedge$            & Bitwise XOR                       & expression $\wedge$ expression        \\
+      \hline
+      13 L->R                     & $|$                 & Bitwise OR                        & expression | expression               \\
+      \hline
+      14 L->R                     & $\&\&$              & Logical AND                       & expression \&\& expression            \\
+      \hline
+      15 L->R                     & $||$                & Logical OR                        & expression || expression              \\
+      \hline
+      \multirow{14}{5em}{16 R->L} & $throw$             & Throw expression                  & throw expression                      \\
+                                  & $co\_yield$         & Yield expression                  & co\_yield expression                  \\
+                                  & $?:$                & Conditional                       & expression ? expression : expression  \\
+                                  & $=$                 & Assignment                        & lvalue = expression                   \\
+                                  & $*=$                & Multiplication assignment         & lvalue *= expression                  \\
+                                  & $/=$                & Division assignment               & lvalue /= expression                  \\
+                                  & $\%=$               & Modulus assignment                & lvalue \%= expression                 \\
+                                  & $+=$                & Addition assignment               & lvalue += expression                  \\
+                                  & $-=$                & Subtraction assignment            & lvalue -= expression                  \\
+                                  & $<<=$               & Bitwise shift left assignment     & lvalue <<= expression                 \\
+                                  & $>>=$               & Bitwise shift right assignment    & lvalue >>= expression                 \\
+                                  & $\&$                & Bitwise AND assignment            & lvalue \&= expression                 \\
+                                  & $|=$                & Bitwise OR assignment             & lvalue |= expression                  \\
+                                  & $\wedge=$           & Bitwise XOR assignment            & lvalue $\wedge=$ expression           \\
+      \hline
+      17 L->R                     & $,$                 & Comma operator                    & expression , expression               \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+\end{document}

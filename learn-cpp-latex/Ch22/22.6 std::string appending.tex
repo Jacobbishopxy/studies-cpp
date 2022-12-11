@@ -1,0 +1,193 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{6}{std::string appending}
+
+在字符串末尾 appending 字符串可以简单的由操作符+=， \acode{append()} 或者 \acode{push_back()} 来实现。
+
+\begin{quotation}
+  \textbf{string\& string::operator+=(const string\& str)}
+
+  \textbf{string\& string::append(const string\& str)}
+
+  \begin{itemize}
+    \item 俩函数可在字符串末尾添加 str 字符串
+    \item 俩函数返回的都是 *this 以便被串联
+    \item 如果返回超过了字符串的最大数量则抛出 length\_error 异常
+  \end{itemize}
+
+  \begin{lstlisting}[language=C++]
+  std::string sString{"one"};
+
+  sString += std::string{" two"};
+
+  std::string sThree{" three"};
+  sString.append(sThree);
+
+  std::cout << sString << '\n';
+  \end{lstlisting}
+
+  输出：
+
+  \begin{lstlisting}
+  one two three
+  \end{lstlisting}
+\end{quotation}
+
+还有一种风格的 \acode{append()} 可以 append 子字符串：
+
+\begin{quotation}
+  \textbf{string\& string::append(const string\& str, size\_type index, size\_type num)}
+
+  \begin{itemize}
+    \item 函数 append 起始于 index 共 num 长的字符给字符串
+    \item 俩函数返回的都是 *this 以便被串联
+    \item 如果 index 超出边界抛出 out\_of\_range 异常
+    \item 如果返回超过了字符串的最大数量则抛出 length\_error 异常
+  \end{itemize}
+
+  \begin{lstlisting}[language=C++]
+  std::string sString{"one "};
+
+  const std::string sTemp{"twothreefour"};
+  sString.append(sTemp, 3, 5); // append substring of sTemp starting at index 3 of length 5
+  std::cout << sString << '\n';
+  \end{lstlisting}
+
+  输出：
+
+  \begin{lstlisting}
+  one three
+  \end{lstlisting}
+\end{quotation}
+
+操作符+= 与 \acode{append()} 也有 C-style 字符串的版本：
+
+\begin{quotation}
+  \textbf{string\& string::operator+= (const char* str)} \
+
+  \textbf{string\& string::append (const char* str)}
+
+  \begin{itemize}
+    \item 俩函数可在字符串末尾添加 str 字符串
+    \item 俩函数返回的都是 *this 以便被串联
+    \item 如果返回超过了字符串的最大数量则抛出 length\_error 异常
+    \item str 不能为 NULL
+  \end{itemize}
+
+  \begin{lstlisting}[language=C++]
+  std::string sString{"one"};
+
+  sString += " two";
+  sString.append(" three");
+  std::cout << sString << '\n';
+  \end{lstlisting}
+
+  输出：
+
+  \begin{lstlisting}
+  one two three
+  \end{lstlisting}
+\end{quotation}
+
+同样风格的 \acode{append()} 也对 C-style 字符串起作用：
+
+\begin{quotation}
+  \textbf{string\& string::append(const char* str, size\_type len)}
+
+  \begin{itemize}
+    \item append 起始 len 个字符至字符串
+    \item 俩函数返回的都是 *this 以便被串联
+    \item 如果返回超过了字符串的最大数量则抛出 length\_error 异常
+    \item 忽略特殊字符（包括"）
+  \end{itemize}
+
+  \begin{lstlisting}[language=C++]
+  std::string sString{"one "};
+
+  sString.append("threefour", 5);
+  std::cout << sString << '\n';
+  \end{lstlisting}
+
+  输出：
+
+  \begin{lstlisting}
+  one three
+  \end{lstlisting}
+
+  该函数很危险，并不推荐使用。
+\end{quotation}
+
+同样还有一系列的函数用于 append 字符。
+注意用于 append 字符的非操作符函数的名称为 \acode{push\_back()}，而不是 \acode{append()}！
+
+\begin{quotation}
+  \textbf{string\& string::operator+=(char c)}
+
+  \textbf{void string::push\_back(char c)}
+
+  \begin{itemize}
+    \item 俩函数 append 字符 c 至字符串
+    \item 操作符+= 返回 *this，以便被串联
+    \item 如果返回超过了字符串的最大数量则俩函数都会抛出 length\_error 异常
+  \end{itemize}
+
+  \begin{lstlisting}[language=C++]
+  std::string sString{"one"};
+
+  sString += ' ';
+  sString.push_back('2');
+  std::cout << sString << '\n';
+  \end{lstlisting}
+
+  输出：
+
+  \begin{lstlisting}
+  one 2
+  \end{lstlisting}
+\end{quotation}
+
+现在或许会疑惑为什么函数是 \acode{push_back()} 而不是 \acode{append()}。
+这是因为栈的命名习惯，\acode{push_back()} 是添加单个项至栈的函数。
+如果预想一个字符串是一个字符的栈，使用 \acode{push_back()} 在字符串末尾添加一个字符是有道理的。
+然而缺少 \acode{append()} 函数确是与习俗不一致的！
+
+实际上对于字符的 \acode{append()} 函数，看上去像是这样：
+
+\begin{quotation}
+  \textbf{string\& string::append(size\_type num, char c)}
+
+  \begin{itemize}
+    \item 添加字符 c 出现的 size\_type 次数
+    \item 俩函数返回的都是 *this 以便被串联
+    \item 如果返回超过了字符串的最大数量则抛出 length\_error 异常
+  \end{itemize}
+
+  \begin{lstlisting}[language=C++]
+  std::string sString{"aaa"};
+
+  sString.append(4, 'b');
+  std::cout << sString << '\n';
+  \end{lstlisting}
+
+  输出：
+
+  \begin{lstlisting}
+  aaabbbb
+  \end{lstlisting}
+\end{quotation}
+
+最后一种风格的 \acode{append()} 用作于迭代器：
+
+\begin{quotation}
+  \textbf{string\& string::append(InputIterator start, InputIterator end)}
+
+  \begin{itemize}
+    \item 从 [start, end) 范围中 append 所有的字符
+    \item 俩函数返回的都是 *this 以便被串联
+    \item 如果返回超过了字符串的最大数量则抛出 length\_error 异常
+  \end{itemize}
+\end{quotation}
+
+\end{document}

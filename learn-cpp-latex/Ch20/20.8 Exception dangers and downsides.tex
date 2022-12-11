@@ -1,0 +1,150 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{8}{Exception dangers and downsides}
+
+异常有很多的好处，但同时也存在一些潜在的缺陷！
+
+\subsubsection*{清理资源}
+
+新手程序员在使用异常时遇到最大的问题就是清理资源。考虑下面代码：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+try
+{
+    openFile(filename);
+    writeFile(filename, data);
+    closeFile(filename);
+}
+catch (const FileException& exception)
+{
+    std::cerr << "Failed to write to file: " << exception.what() << '\n';
+}
+\end{lstlisting}
+
+如果 \acode{WriteFile()} 失败并抛出一个 \acode{FileException} 会发生什么？
+这个时间点已经打开了文件，现在的控制流调到了 \acode{FileException} 句柄，即打印错误并退出。
+注意文件永远没有被关闭！这个例子应该重写成：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+try
+{
+    openFile(filename);
+    writeFile(filename, data);
+}
+catch (const FileException& exception)
+{
+    std::cerr << "Failed to write to file: " << exception.what() << '\n';
+}
+
+// 确保文件被关闭
+closeFile(filename);
+\end{lstlisting}
+
+该类型的错误通常以另一种形式出现，即当处理动态分配内存时：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+try
+{
+    auto* john { new Person{ "John", 18, PERSON_MALE } };
+    processPerson(john);
+    delete john;
+}
+catch (const PersonException& exception)
+{
+    std::cerr << "Failed to process person: " << exception.what() << '\n';
+}
+\end{lstlisting}
+
+如果 \acode{processPerson()} 抛出异常，控制流调转到捕获句柄。
+结果 john 永远没有被释放！
+这个例子比上一个例子更为狡猾 --
+因为 john 是属于 try block 本地的，它会在 try block 退出时离开作用域。
+这就意味着异常处理完全不能访问 john（它已经被销毁了），因此没有办法释放其内存。
+
+然而有两种相关的简单方法来修复这个问题。首先，在 try block 外声明 john，
+因此其不会在 try block 退出时离开作用域：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+Person* john{ nullptr };
+
+try
+{
+    john = new Person("John", 18, PERSON_MALE);
+    processPerson(john);
+}
+catch (const PersonException& exception)
+{
+    std::cerr << "Failed to process person: " << exception.what() << '\n';
+}
+
+delete john;
+\end{lstlisting}
+
+第二种方法是使用一个本地的类变量，其明白在离开作用域时改如何清理自身（通常称为智能指针）。
+标准库为了这个目的提供了一个名为 \acode{std::unique_ptr} 的类。
+\textbf{std::unique\_ptr} 是一个模板类其存储一个指针，在离开作用域时释放该指针。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <memory> // std::unique_ptr
+
+try
+{
+    auto* john { new Person("John", 18, PERSON_MALE) };
+    std::unique_ptr<Person> upJohn { john }; // upJohn 现在拥有 john
+
+    ProcessPerson(john);
+
+    // 当 upJohn 离开作用域，它会删除 john
+}
+catch (const PersonException& exception)
+{
+    std::cerr << "Failed to process person: " << exception.what() << '\n';
+}
+\end{lstlisting}
+
+下一章节将会详细讲解智能指针。
+
+\subsubsection*{异常与析构函数}
+
+不同于构造函数，抛出异常在表示对象创建没有成功时非常的有用，但是异常应该\textit{永远不}在析构函数中抛出。
+
+问题出现在当一个异常从析构函数中抛出时的栈展开过程中。
+编译器会进入一种状态不知道是继续栈展开过程还是处理新的异常。
+最终的结果就是程序立刻被终结。
+
+规则：析构函数不应该抛出异常。
+
+\subsubsection*{性能考虑}
+
+异常确实具有小的性能成本。
+它们增加了可执行的大小，同时由于需要执行额外的检查，这也可能会造成运行变慢。
+然而异常所带来的主要性能惩罚适当其真实被抛出的时候。
+这种情况下，栈必须被展开同时查找合适的异常处理，也就是一个相对昂贵的操作。
+
+作为记录，一些现代计算机架构支持被称为零成本异常的异常模型。
+如果支持的话，就没有额外的运行时成本在非错误情况（也是最关心性能的地方）。
+然而，它们在发现异常时带来了更大的惩罚。
+
+\subsubsection*{何时使用异常}
+
+异常处理的最佳使用是当以下条件皆满足时：
+
+\begin{itemize}
+    \item 低频率的出错
+    \item 错误很严峻，且不处理就没法继续
+    \item 错误不能在其出现处被处理
+    \item 没有其他的方案来返回错误码给调用者
+\end{itemize}
+
+\end{document}

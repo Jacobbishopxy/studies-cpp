@@ -1,0 +1,83 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{4}{Access functions and encapsulation}
+
+\subsubsection*{封装}
+
+面向对象编程里，\textbf{封装} encapsulation（也称为\textbf{信息隐藏} Information hiding）
+是一种将实现的细节隐藏的步骤。用户通过公有接口访问对象，而不需要知道其内部是如何实现的。
+
+\begin{itemize}
+    \item 既可以便于使用也可以减少程序的复杂度。
+    \item 帮助保护数据以及防止滥用。
+    \item 利于调试
+\end{itemize}
+
+\subsubsection*{访问函数}
+
+\textbf{访问函数}是简短的公有函数，其职责是获取或修改私有成员变量。
+
+访问函数通常有两种：getters 以及 setters。
+\textbf{Getters}（有时也称为 \textbf{accessors}）是用于返回私有成员变量的函数；
+\textbf{Setters}（有时也称为 \textbf{mutators}）是用于设置私有成员变量的函数。
+
+\begin{lstlisting}[language=C++]
+class Date
+  {
+    private:
+    int m_month;
+    int m_day;
+    int m_year;
+
+    public:
+    int getMonth() { return m_month; } // month 的 getter
+    void setMonth(int month) { m_month = month; } // month 的 setter
+
+    int getDay() { return m_day; } // day 的 getter
+    void setDay(int day) { m_day = day; } // day 的 setter
+
+    int getYear() { return m_year; } // year 的 getter
+    void setYear(int year) { m_year = year; } // year 的 setter
+  };
+\end{lstlisting}
+
+一个简单的例子，getter 返回非 const 引用：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class Foo
+{
+private:
+int m_value{ 4 };
+
+public:
+int& getValue() { return m_value; } // 返回非 const 引用
+};
+
+int main()
+{
+    Foo f;                     // f.m_value 初始化为 4
+    f.getValue() = 5;          // 使用非 const 引用赋值 m_value 为 5
+    std::cout << f.getValue(); // 打印 5
+
+    return 0;
+  }
+\end{lstlisting}
+
+最佳实践：getters 应该返回值或者 const 引用。
+
+\subsubsection*{访问函数的关注点}
+
+创建类的时候考虑以下几点：
+
+\begin{itemize}
+    \item 如果类的成员没有任何的外部访问需求，则不要提供该成员的访问函数
+    \item 如果类的成员需要被外部访问，则需要考虑是否暴露 behavior 还是 action
+          （例如是一个 \acode{setAlive(bool)} 的 setter，还是实现 \acode{kill()} 函数）
+    \item 如果都不是，考虑是否仅可以提供一个 getter
+\end{itemize}
+
+\end{document}

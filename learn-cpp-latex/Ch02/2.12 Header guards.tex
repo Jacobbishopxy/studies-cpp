@@ -1,0 +1,206 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{12}{Header guards}
+
+通过\textbf{头文件保护符}的这样一种机制可以避免重复定义这样的问题（也可被称为 \textbf{include guard}）。
+通过以下形式，头文件保护符可以条件编译指令：
+
+\begin{lstlisting}[language=C++]
+#ifndef SOME_UNIQUE_NAME_HERE
+#define SOME_UNIQUE_NAME_HERE
+
+// 用户定义（以及某些类型的定义）于此
+
+#endif
+\end{lstlisting}
+
+当该头文件被 \#included，预处理器检查 \textit{SOME\_UNIQUE\_NAME\_HERE} 是否之前就被定义了。
+如果是第一次引入该头文件，此时 \textit{SOME\_UNIQUE\_NAME\_HERE} 还未被定义。
+因此 \#define \textit{SOME\_UNIQUE\_NAME\_HERE} 并且引入文件内容。
+如果该头文件再次被引入至同一个文件，\textit{SOME\_UNIQUE\_NAME\_HERE} 已经被定义了，该头文件则被忽略（多亏了 \#ifndef）。
+
+举个列子：
+
+square.h:
+
+\begin{lstlisting}[language=C++]
+#ifndef SQUARE_H
+#define SQUARE_H
+
+int getSquareSides()
+{
+   return 4;
+}
+
+#endif
+\end{lstlisting}
+
+geometry.h:
+
+\begin{lstlisting}[language=C++]
+#ifndef GEOMETRY_H
+#define GEOMETRY_H
+
+#include "square.h"
+
+#endif
+\end{lstlisting}
+
+main.cpp:
+
+\begin{lstlisting}[language=C++]
+#include "square.h"
+#include "geometry.h"
+
+int main()
+{
+   return 0;
+}
+\end{lstlisting}
+
+在预处理器解决完所有的 \#include 指令后，程序会类似于这样：
+
+main.cpp:
+
+\begin{lstlisting}[language=C++]
+// Square.h 被 main.cpp include
+#ifndef SQUARE_H // square.h 被 main.cpp include
+#define SQUARE_H // SQUARE_H 获得定义
+
+// 其所有的内容在此被 include
+int getSquareSides()
+{
+   return 4;
+}
+
+#endif // SQUARE_H
+
+#ifndef GEOMETRY_H   // geometry.h 被 main.cpp include
+#define GEOMETRY_H
+#ifndef SQUARE_H     // square.h 被 geometry.h include, SQUARE_H 之前已经被定义过了
+#define SQUARE_H     // 因此没有内容在此被 include
+
+int getSquareSides()
+{
+   return 4;
+}
+
+#endif // SQUARE_H
+#endif // GEOMETRY_H
+
+int main()
+{
+   return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{头文件保护符不阻止头文件被不同的代码文件引用多次}
+
+square.h:
+
+\begin{lstlisting}[language=C++]
+#ifndef SQUARE_H
+#define SQUARE_H
+
+int getSquareSides()
+{
+   return 4;
+}
+
+int getSquarePerimeter(int sideLength); // getSquarePerimeter 的前置定义
+
+#endif
+\end{lstlisting}
+
+square.cpp:
+
+\begin{lstlisting}[language=C++]
+#include "square.h"  // square.h 在这里被引入一次
+
+int getSquarePerimeter(int sideLength)
+{
+   return sideLength * getSquareSides();
+}
+\end{lstlisting}
+
+main.cpp:
+
+\begin{lstlisting}[language=C++]
+#include "square.h" // square.h 在这里又被引入一次
+#include <iostream>
+
+int main()
+{
+   std::cout << "a square has " << getSquareSides() << " sides\n";
+   std::cout << "a square of length 5 has perimeter length " << getSquarePerimeter(5) << '\n';
+
+   return 0;
+}
+\end{lstlisting}
+
+注意 \textit{square.h} 同时被 \textit{main.cpp} 和 \textit{square.cpp} 引入了，
+这就意味着 \textit{square.h} 的内容也被分别引入进了两个代码文件。
+最终结果就是项目可以被编译但是 linker 会告知有多个 \textit{getSquareSides} 标识符的定义。
+
+避免这种情况最好的办法是简单的放置函数定义进一个 .cpp 文件，因此头文件仅需包含前置定义：
+
+square.h:
+
+\begin{lstlisting}[language=C++]
+#ifndef SQUARE_H
+#define SQUARE_H
+
+int getSquareSides(); // getSquareSides 的前置定义
+int getSquarePerimeter(int sideLength); // getSquarePerimeter 的前置定义
+
+#endif
+\end{lstlisting}
+
+square.cpp:
+
+\begin{lstlisting}[language=C++]
+#include "square.h"
+
+int getSquareSides() // getSquareSides 的实际定义
+{
+return 4;
+}
+
+int getSquarePerimeter(int sideLength)
+{
+   return sideLength * getSquareSides();
+}
+\end{lstlisting}
+
+main.cpp:
+
+\begin{lstlisting}[language=C++]
+#include "square.h" // square.h 在此也被引用
+#include <iostream>
+
+int main()
+{
+   std::cout << "a square has " << getSquareSides() << "sides\n";
+   std::cout << "a square of length 5 has perimeter length " << getSquarePerimeter(5) << '\n';
+
+   return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{\#pragma once}
+
+现代编译器提供了另外一个更简单的头文件保护符，那就是使用 \textit{\#pragma} 指令：
+
+\begin{lstlisting}[language=C++]
+#pragma once
+
+// 用户代码
+\end{lstlisting}
+
+\acode{\#pragma once} 更加简短以及不易出错。
+对于大多数项目而言 \acode{\#pragma once} 就可以很好的工作了。
+然而 \acode{\#pragma once} 并不属于 C++ 的官方语言（并且将永远不是，因为它不能在所有情况下都提供可靠性）。
+
+\end{document}

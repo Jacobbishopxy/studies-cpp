@@ -1,0 +1,169 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{9}{Exception specifications and noexcept}
+
+C++ 中的所有函数都被归类为\textbf{非抛出} non-throwing（不抛出异常）
+或者是\textbf{潜在抛出} potentially throwing（有可能抛出异常）。
+
+考虑以下函数声明：
+
+\begin{lstlisting}[language=C++]
+int doSomething(); // 这个函数抛出异常还是不会？
+\end{lstlisting}
+
+观察一个通常的函数定义不可能判断的了其是否会抛出异常。
+虽然注释可能有用，但是文档并不可以并且编译器也不能执行注释。
+
+\textbf{异常说明} exception specifications 是一种最初设计用来记录何种类型的异常可能会被函数抛出的语言机制。
+虽然大部分的异常说明已经被废弃或者移除了，一个有用的异常说明添加进来作为代替，即本章节覆盖的内容。
+
+\subsubsection*{noexcept 说明符}
+
+\textbf{noexcept 说明符}定义一个函数为 non-throwing。
+
+\begin{lstlisting}[language=C++]
+void doSomething() noexcept; // 该函数为 non-throwing
+\end{lstlisting}
+
+注意 \acode{noexcept} 并不实际阻止函数抛出异常或者调用其它潜在抛出异常的函数。
+相反，当一个异常被抛出，如果异常退出 noexcept 函数，\acode{std::terminate} 则会被调用。
+同样注意如果 \acode{std::terminate} 在 noexcept 函数中被调用，栈展开有可能不出现（根据实现与优化），
+这就意味着对象有可能不能被正确销毁。
+
+就像函数因为不同的返回值不能重新，函数的异常说明不同也不能被重写。
+
+\subsubsection*{带有布尔参数的 noexcept 说明符}
+
+\acode{noexcept(true)} 等同于 \acode{noexcept}，意为函数为 non-throwing。
+\acode{noexcept(false)} 意为函数为潜在 throwing。
+这些参数通常只会用在模板函数中，所以模版函数可以通过一些参数值动态的被创建为 non-throwing 或者潜在 throwing。
+
+\subsubsection*{哪个函数是 non-throwing 以及 potentially-throwing 的}
+
+函数是隐式 non-throwing 的：
+
+\begin{itemize}
+  \item 析构函数
+\end{itemize}
+
+函数默认为 non-throwing 的隐式声明或默认函数：
+
+\begin{itemize}
+  \item 构造函数：默认，拷贝，移动
+  \item 赋值：拷贝，移动
+  \item 比较操作符（从 C++20 开始）
+\end{itemize}
+
+然而，如果这些函数调用（无论显式或隐式）了其他函数为潜在 throwing 的，
+那么它们也会被视为潜在 throwing。
+例如，如果一个类的数据成员拥有潜在 throwing 的构造函数，
+那么该类的构造函数也会被视为潜在 throwing。另一个例子，
+如果拷贝赋值操作符调用了前者 throwing 的赋值操作符，
+那么拷贝赋值也将会变成潜在 throwing。
+
+函数为潜在 throwing（如果不是隐式声明或默认的）：
+
+\begin{itemize}
+  \item 普通函数
+  \item 用户定义的构造函数
+  \item 用户定义的操作符
+\end{itemize}
+
+\subsubsection*{noexcept 操作符}
+
+noexcept 操作符同样也可以在函数中使用。
+其获取一个表达式作为参数，根据编译器判断是否会抛出异常来返回 \acode{true} 或 \acode{false}。
+noexcept 操作符会在编译期进行静态检查，且不会实际的计算输入的表达式。
+
+\begin{lstlisting}[language=C++]
+void foo() {throw -1;}
+void boo() {};
+void goo() noexcept {};
+struct S{};
+
+constexpr bool b1{ noexcept(5 + 3) }; // true；ints 为 non-throwing
+constexpr bool b2{ noexcept(foo()) }; // false；foo() 抛出异常
+constexpr bool b3{ noexcept(boo()) }; // false；boo() 为隐式 noexcept(false)
+constexpr bool b4{ noexcept(goo()) }; // true；goo() 为显式 noexcept(true)
+constexpr bool b5{ noexcept(S{}) };   // true；机构提默认构造函数是 noexcept
+\end{lstlisting}
+
+noexcept 操作符可以用于根据是否为潜在 throwing 有条件的执行代码。
+这是需要满足某些\textbf{异常安全保证}。
+
+\subsubsection*{异常安全保证}
+
+\textbf{异常安全保证}是一种合规指南用于保证函数或类如何在异常出现时做出的行为。
+有四种等级的异常安全：
+
+\begin{itemize}
+  \item 无保证 -- 在异常抛出时没有保证（例如一个类处于不可用状态）
+  \item 基础保证 -- 如果异常抛出，没有内存泄漏同时对象仍然不可用，但是程序有可能处于修改状态
+  \item 强保证 -- 如果异常抛出，没有内存泄漏同时程序状态不会被改变。
+        这意味着函数必须是完全成功或者说失败后没有副作用。也就是说失败发生之前任何被修改的都可以回滚到之前的状态。
+  \item 无抛出/无失败 -- 函数总是成功（no-fail）或者失败也不抛出异常（no-throw）
+\end{itemize}
+
+现在来看 no-throw/no-fail 保证的细节：
+
+no-throw 保证：如果函数失败，那么不会抛出异常。而是返回错误码或者忽略问题。
+在栈展开期间，当一个异常已经被处理了，则需要 no-throw 保证；
+例如，所有的析构函数应该都有 no-throw 保证（其内部调用的任何函数也是一样）。
+
+例如以下应该为 no-throw：
+
+\begin{itemize}
+  \item 析构函数与内存释放/清除函数
+  \item 调用函数更高一层的函数需要 no-throw 时
+\end{itemize}
+
+no-fail 保证：函数总能成功（因此拥有不需要抛出异常，因此 no-fail 稍微比 no-throw 的形式更强）。
+
+例如以下应该为 no-fail：
+
+\begin{itemize}
+  \item 移动构造函数以及移动赋值（移动语义，在 15 章中覆盖）
+  \item swap 函数
+  \item 容器的 clear/erase/reset 函数
+  \item 对 \acode{std::unique_ptr} 的操作（同样在 15 章覆盖）
+  \item 调用函数更高一层的函数需要 no-fail 时
+\end{itemize}
+
+\subsubsection*{何时使用 noexcept}
+
+即使代码不显式的抛出异常，并不意味着应该在代码中加上 \acode{noexcept}。
+默认情况下，大多数函数都是潜在 throwing 的，因此如果函数调用其他函数，
+它们本身就是潜在 throwing 的，因此符合自身潜在 throwing。
+
+标记函数为 non-throwing 有一些不错的原因：
+
+\begin{itemize}
+  \item non-throwing 函数可以被安全的调用在非异常安全的函数中，例如析构函数
+  \item noexcept 的函数可以允许编译期提供更好的优化。
+        因为一个 noexcept 函数不能在其外部抛出异常，编译器不需要担心维护运行时的栈与展开状态，
+        这样使得代码变得更快。
+  \item 有几种情况下知道函数为 noexcept 时可以生产高性能实现的代码：
+        标准库容器（例如 \acode{std::vector}）就是 noexcept 的，
+        并且使用 noexcept 操作符判定使用 \acode{move semantics}（更快）还是 \acode{copy semantics}（更慢）。
+\end{itemize}
+
+标准库使用 \acode{noexcept} 的方针仅存在于\textit{必须不能}抛出异常或失败。
+函数是潜在 throwing 的但是实际并没有抛出异常（因为实现的原因）通常不被标记为 \acode{noexcept}。
+
+对于用户的代码，有两个地方使用 \acode{noexcept} 有意义：
+
+\begin{itemize}
+  \item 构造函数以及重载的赋值操作符为 no-throw（获取性能优化）
+  \item 函数希望表达 no-throw 或 no-fail 保证（记录它们可以被安全的用在析构函数或者其他 noexcept 函数）
+\end{itemize}
+
+最佳实践：当允许时，为构造函数与重载赋值操作符加上 \acode{noexcept}。
+其它希望表达 no-fail 或 no-throw 保证的函数也加上 \acode{noexcept}。
+
+最佳实践：如果不能确定一个函数是否有 no-fail/no-throw 保证，谨慎起见不要标记其 \acode{noexcept}。
+若是移除原本的 noexcept 则会违反一个接口向用户承诺的行为功能，也可能会破坏已有代码。
+为了更强的保证，在之后给非 noexcept 函数添加 noexcept 是被视为安全的。
+
+\end{document}
