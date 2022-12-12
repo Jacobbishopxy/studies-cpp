@@ -1,0 +1,211 @@
+
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{8}{Overloading the increment and decrement operators}
+
+重载增加（\acode{++}）与减少（\acode{--}）操作符非常的直观，仅有一个小例外。
+它们实际上两个版本的增加与减少操作符：前置增加以及减少（例如 \acode{++x; --y;}）以及后置的增加与减少（例如 \acode{x++; y--;}）。
+
+由于增加与减少操作符都是一元操作符，它们要修改操作成员，因此最好是作为成员函数进行重载。这里处理前置的版本，因为它们更直观。
+
+\subsubsection*{重载前置增加与减少}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class Digit
+{
+private:
+    int m_digit;
+public:
+    Digit(int digit=0)
+        : m_digit{digit}
+    {
+    }
+
+    Digit& operator++();
+    Digit& operator--();
+
+    friend std::ostream& operator<< (std::ostream& out, const Digit& d);
+};
+
+Digit& Digit::operator++()
+{
+    // If our number is already at 9, wrap around to 0
+    if (m_digit == 9)
+        m_digit = 0;
+    // otherwise just increment to next number
+    else
+        ++m_digit;
+
+    return *this;
+}
+
+Digit& Digit::operator--()
+{
+    // If our number is already at 0, wrap around to 9
+    if (m_digit == 0)
+        m_digit = 9;
+    // otherwise just decrement to next number
+    else
+        --m_digit;
+
+    return *this;
+}
+
+std::ostream& operator<< (std::ostream& out, const Digit& d)
+{
+	out << d.m_digit;
+	return out;
+}
+
+int main()
+{
+    Digit digit(8);
+
+    std::cout << digit;
+    std::cout << ++digit;
+    std::cout << ++digit;
+    std::cout << --digit;
+    std::cout << --digit;
+
+    return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+89098
+\end{lstlisting}
+
+注意返回了 *this。重载的增加与减少操作符返回当前的隐式对象，这样若干操作符可以被”串联“起来。
+
+\subsubsection*{重载后置增加与减少}
+
+通常而言，重名的函数可以通过不同的参数数量以及/或不同的参数类型来进行重载。
+然而考虑前置与后置的增加与减少操作符，它们都有相同的名字，并且都是接受同样类型的一个参数。
+那么如何区分它们的重载呢？
+
+C++ 语言规范提供了一个特殊的方案：编译器检查重载操作符是否有一个 int 参数。如果有，操作符是后置重载；
+如果重载的操作符没有参数，操作符则是前置重载。
+
+\begin{lstlisting}[language=C++]
+class Digit
+{
+private:
+    int m_digit;
+public:
+    Digit(int digit=0)
+        : m_digit{digit}
+    {
+    }
+
+    Digit& operator++(); // 前置不带参数
+    Digit& operator--(); // 前置不带参数
+
+    Digit operator++(int); // 后置带有 int 参数
+    Digit operator--(int); // 后置带有 int 参数
+
+    friend std::ostream& operator<< (std::ostream& out, const Digit& d);
+};
+
+// 没有参数意味着前置 operator++
+Digit& Digit::operator++()
+{
+    // 如果处于 9，处理成 0
+    if (m_digit == 9)
+        m_digit = 0;
+    // 否则增加一个数
+    else
+        ++m_digit;
+
+    return *this;
+}
+
+// 没有参数意味着前置 operator--
+Digit& Digit::operator--()
+{
+    // 如果处于 0，处理成 9
+    if (m_digit == 0)
+        m_digit = 9;
+    // 否则减少一个数
+    else
+        --m_digit;
+
+    return *this;
+}
+
+// int 参数意味着后置 operator++
+Digit Digit::operator++(int)
+{
+    // 通过当前的 digit 创建一个临时的变量
+    Digit temp{*this};
+
+    // 使用前置操作符来增加 digit
+    ++(*this); // 应用操作符
+
+    // 返回临时结果
+    return temp; // 返回保存的状态
+}
+
+// int 参数意味着后置 operator--
+Digit Digit::operator--(int)
+{
+    // 通过当前的 digit 创建一个临时的变量
+    Digit temp{*this};
+
+    // 使用前置操作符来减少 digit
+    --(*this); // 应用操作符
+
+    // 返回临时的结果
+    return temp; // 返回保存的状态
+}
+
+std::ostream& operator<< (std::ostream& out, const Digit& d)
+{
+	out << d.m_digit;
+	return out;
+}
+
+int main()
+{
+    Digit digit(5);
+
+    std::cout << digit;
+    std::cout << ++digit; // 调用 Digit::operator++();
+    std::cout << digit++; // 调用 Digit::operator++(int);
+    std::cout << digit;
+    std::cout << --digit; // 调用 Digit::operator--();
+    std::cout << digit--; // 调用 Digit::operator--(int);
+    std::cout << digit;
+
+    return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+5667665
+\end{lstlisting}
+
+这里有几个有趣的点。首先，注意通过整数虚拟参数区分了前置与后置操作符。其次由于虚拟参数并没有在函数实现中使用，因此不需要为其命名。
+这就是告诉编译器对待该变量为占位符，意味着不会因为声明了变量却不使用而产生警告。
+
+其次，注意前置与后置操作符的功能一致 -- 它们都是增加或减少对象。它们俩的区别在于返回的值。前置操作符返回被增加或减少的对象。
+因此重载它们非常的直接，仅需简单的增加或减少成员变量，接着返回 *this。
+
+后置操作符需要返回的是增加或减少发生前的状态。这就带来了一点迷惑 -- 如果要返回修改前的状态，那么增加或减少对象就不可能。
+也就是说如果在修改对象前返回对象，修改的行为将永远不会被调用。
+
+这个问题的通常解决方案是使用临时变量来存储修改前的状态。那么对象可以被修改，最后临时变量被返回给调用者。
+这种方式下，调用者获取的是对象在修改之前的拷贝，而对象本身已经被修改了。
+注意这就意味着返回值必须是非引用的，因为不能返回本地变量的引用，它们会在函数结束时被销毁。
+同样注意这就意味着后置操作符通常效率会比前置操作符更低一些，因为整个过程中增加了临时变量的实例化，并且值返回而不是引用返回。
+
+最后注意后置操作符都调用了前置操作符的函数。这样减少了重复代码，同样使得未来的修改变得更简单。
+
+\end{document}

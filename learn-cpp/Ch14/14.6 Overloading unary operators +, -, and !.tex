@@ -1,0 +1,126 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{6}{Overloading unary operators +, -, and !}
+
+\subsubsection*{重载一元操作符}
+
+不同于迄今为止已经见到过得操作符，正号（+）、负号（-）以及逻辑非（!）操作符都是一元操作符，
+这就意味着它们仅可以对一个运算成员进行计算。
+因为它们运算的对象就是应用的对象，通常一元操作符重载的实现都是以成员函数的方式。
+这三种运算的实现行为一致。
+
+现在看一下上一节所用的例子来进行操作符- 重载：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class Cents
+{
+private:
+    int m_cents {};
+
+public:
+    Cents(int cents): m_cents{cents} {}
+
+    // 以成员函数的方式重载 -Cents
+    Cents operator-() const;
+
+    int getCents() const { return m_cents; }
+};
+
+// 注意：该函数为成员函数！
+Cents Cents::operator-() const
+{
+    return -m_cents; // 由于返回类型是一个 Cents，这里使用了 Cents(int) 构造函数，进行了从 int 到 Cents 的一个隐式转换
+}
+
+int main()
+{
+    const Cents nickle{ 5 };
+    std::cout << "A nickle of debt is worth " << (-nickle).getCents() << " cents\n";
+
+    return 0;
+}
+\end{lstlisting}
+
+这应该是很直接的。重载的负号操作符（-）是一个以成员函数方式实现的一元操作符，因此其不需要参数（它运算 *this 对象）。
+该函数返回一个与原始对象一样的对象，其值带有负号。
+因为操作符- 不修改 Cents 对象，我们可以（应该）使其成为一个 const 函数（有此可在 const Cents 对象上进行调用）。
+
+注意这里的负号操作符- 与减法操作符- 应该是没有歧义的 -- 因为它们的参数不同。
+
+以下是另一个案例。操作符! 是逻辑非操作符 -- 如果一个表达式运算类似于“true”，操作符! 将返回 false，反之亦然。
+我们通常会在布尔变量上看到这样的操作：
+
+\begin{lstlisting}[language=C++]
+if (!isHappy)
+  std::cout << "I am not happy!\n";
+else
+  std::cout << "I am so happy!\n";
+\end{lstlisting}
+
+对于整数，0 解析为 false，其它为 true，因此操作符! 应用在除零以外的整数上都为 true，零为 false。
+
+延展这个概念，在“false“，”zero“ 或者其他默认初始状态下，使用操作符! 解析为 true。
+
+以下案例展示了重载了操作符- 以及操作符! 的自定义 Point 类：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class Point
+{
+private:
+    double m_x {};
+    double m_y {};
+    double m_z {};
+
+public:
+    Point(double x=0.0, double y=0.0, double z=0.0):
+        m_x{x}, m_y{y}, m_z{z}
+    {
+    }
+
+    // 转换 Point 为与之相等的负值
+    Point operator- () const;
+
+    // 如果 point 是原点返回 true
+    bool operator! () const;
+
+    double getX() const { return m_x; }
+    double getY() const { return m_y; }
+    double getZ() const { return m_z; }
+};
+
+Point Point::operator- () const
+{
+    return { -m_x, -m_y, -m_z };
+}
+
+bool Point::operator! () const
+{
+    return (m_x == 0.0 && m_y == 0.0 && m_z == 0.0);
+}
+
+int main()
+{
+    Point point{}; // use default constructor to set to (0.0, 0.0, 0.0)
+
+    if (!point)
+        std::cout << "point is set at the origin.\n";
+    else
+        std::cout << "point is not set at the origin.\n";
+
+    return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+point is set at the origin.
+\end{lstlisting}
+
+\end{document}

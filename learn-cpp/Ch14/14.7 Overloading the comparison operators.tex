@@ -1,0 +1,242 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{7}{Overloading the comparison operators}
+
+在 5.6 的关系符以及浮点数比较中讨论了六种比较操作符。重载这些比较操作符相对来说比较简单，因为它们遵循相同的模式。
+
+因为比较操作符同样都是二元操作符，并且不会修改左侧运算成员，因此我们将以友元函数的方式进行重载。
+
+这里是一个重载了操作符== 与操作符!= 的 Car 类案例：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <string>
+#include <string_view>
+
+class Car
+{
+private:
+    std::string m_make;
+    std::string m_model;
+
+public:
+    Car(std::string_view make, std::string_view model)
+        : m_make{ make }, m_model{ model }
+    {
+    }
+
+    friend bool operator== (const Car& c1, const Car& c2);
+    friend bool operator!= (const Car& c1, const Car& c2);
+};
+
+bool operator== (const Car& c1, const Car& c2)
+{
+    return (c1.m_make == c2.m_make &&
+            c1.m_model == c2.m_model);
+}
+
+bool operator!= (const Car& c1, const Car& c2)
+{
+    return (c1.m_make != c2.m_make ||
+            c1.m_model != c2.m_model);
+}
+
+int main()
+{
+    Car corolla{ "Toyota", "Corolla" };
+    Car camry{ "Toyota", "Camry" };
+
+    if (corolla == camry)
+        std::cout << "a Corolla and Camry are the same.\n";
+
+    if (corolla != camry)
+        std::cout << "a Corolla and Camry are not the same.\n";
+
+    return 0;
+}
+\end{lstlisting}
+
+上述代码非常的直观。
+
+那么操作符< 与操作符> 呢？它们的直观意义并不明确，因此不去定义这些操作符更好。
+
+最佳实践：仅去定义符合直觉的重载操作符。
+
+然而有一个特例。如果希望对 Cars 列表进行排序呢？这种情况下，我们希望能重载比较操作符用于排序。
+例如对 Cars 重载操作符< 意为根据字母顺序进行排序。
+
+一些标准库中的容器类需要重载操作符< 这样它们可以维护元素的排序。
+
+这里是另一个重载了 6 个所有比较操作符的例子：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class Cents
+{
+private:
+    int m_cents;
+
+public:
+    Cents(int cents)
+	: m_cents{ cents }
+	{}
+
+    friend bool operator== (const Cents& c1, const Cents& c2);
+    friend bool operator!= (const Cents& c1, const Cents& c2);
+
+    friend bool operator< (const Cents& c1, const Cents& c2);
+    friend bool operator> (const Cents& c1, const Cents& c2);
+
+    friend bool operator<= (const Cents& c1, const Cents& c2);
+    friend bool operator>= (const Cents& c1, const Cents& c2);
+};
+
+bool operator== (const Cents& c1, const Cents& c2)
+{
+    return c1.m_cents == c2.m_cents;
+}
+
+bool operator!= (const Cents& c1, const Cents& c2)
+{
+    return c1.m_cents != c2.m_cents;
+}
+
+bool operator< (const Cents& c1, const Cents& c2)
+{
+    return c1.m_cents < c2.m_cents;
+}
+
+bool operator> (const Cents& c1, const Cents& c2)
+{
+    return c1.m_cents > c2.m_cents;
+}
+
+bool operator<= (const Cents& c1, const Cents& c2)
+{
+    return c1.m_cents <= c2.m_cents;
+}
+
+bool operator>= (const Cents& c1, const Cents& c2)
+{
+    return c1.m_cents >= c2.m_cents;
+}
+
+int main()
+{
+    Cents dime{ 10 };
+    Cents nickel{ 5 };
+
+    if (nickel > dime)
+        std::cout << "a nickel is greater than a dime.\n";
+    if (nickel >= dime)
+        std::cout << "a nickel is greater than or equal to a dime.\n";
+    if (nickel < dime)
+        std::cout << "a dime is greater than a nickel.\n";
+    if (nickel <= dime)
+        std::cout << "a dime is greater than or equal to a nickel.\n";
+    if (nickel == dime)
+        std::cout << "a dime is equal to a nickel.\n";
+    if (nickel != dime)
+        std::cout << "a dime is not equal to a nickel.\n";
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{最小化比较的冗余}
+
+上述例子可以注意到每个重载比较操作符有多么的相似。重载比较操作符倾向有高度的冗余，并且随着实现的复杂性增加，冗余随之增加。
+
+幸运的是，很多比较操作符可以使用其他比较操作符来实现：
+
+\begin{itemize}
+  \item 操作符!= 可以通过 !(操作符==) 来实现
+  \item 操作符> 可以通过与之相反的 < 来实现
+  \item 操作符>= 可以通过 !(操作符<) 来实现
+  \item 操作符<= 可以通过 !(操作符>) 来实现
+\end{itemize}
+
+这就意味着我们仅需要实现操作符== 以及操作符<，那么其它的四个比较操作符可以根据这两个操作符来被定义！以下是更新后的 Cents 案例：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class Cents
+{
+private:
+    int m_cents;
+
+public:
+    Cents(int cents)
+        : m_cents{ cents }
+    {}
+
+    friend bool operator== (const Cents& c1, const Cents& c2);
+    friend bool operator!= (const Cents& c1, const Cents& c2);
+
+    friend bool operator< (const Cents& c1, const Cents& c2);
+    friend bool operator> (const Cents& c1, const Cents& c2);
+
+    friend bool operator<= (const Cents& c1, const Cents& c2);
+    friend bool operator>= (const Cents& c1, const Cents& c2);
+
+};
+
+bool operator== (const Cents& c1, const Cents& c2)
+{
+    return c1.m_cents == c2.m_cents;
+}
+
+bool operator!= (const Cents& c1, const Cents& c2)
+{
+    return !(operator==(c1, c2));
+}
+
+bool operator< (const Cents& c1, const Cents& c2)
+{
+    return c1.m_cents < c2.m_cents;
+}
+
+bool operator> (const Cents& c1, const Cents& c2)
+{
+    return operator<(c2, c1);
+}
+
+bool operator<= (const Cents& c1, const Cents& c2)
+{
+    return !(operator>(c1, c2));
+}
+
+bool operator>= (const Cents& c1, const Cents& c2)
+{
+    return !(operator<(c1, c2));
+}
+
+int main()
+{
+    Cents dime{ 10 };
+    Cents nickel{ 5 };
+
+    if (nickel > dime)
+        std::cout << "a nickel is greater than a dime.\n";
+    if (nickel >= dime)
+        std::cout << "a nickel is greater than or equal to a dime.\n";
+    if (nickel < dime)
+        std::cout << "a dime is greater than a nickel.\n";
+    if (nickel <= dime)
+        std::cout << "a dime is greater than or equal to a nickel.\n";
+    if (nickel == dime)
+        std::cout << "a dime is equal to a nickel.\n";
+    if (nickel != dime)
+        std::cout << "a dime is not equal to a nickel.\n";
+
+    return 0;
+}
+\end{lstlisting}
+
+如此便在需要修改的时候，仅需要更新操作符== 以及操作符< 而不是所有的六种比较操作符！
+
+\end{document}
