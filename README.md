@@ -94,6 +94,8 @@ A personal C-plus-plus study note.
 
    - enabling polymorphic copy construction
 
+1. [grade_map](./learn-cpp-codes/grade_map/main.cpp): overloading the subscript operator[]
+
 ## Vscode settings
 
 - C++ format in `settings.json`:

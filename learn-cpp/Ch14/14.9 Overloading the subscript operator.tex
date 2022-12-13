@@ -1,0 +1,326 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{9}{Overloading the subscript operator}
+
+在处理数组的时候，通常会使用下标操作符（$\left[\right]$）来索引其指定元素：
+
+\begin{lstlisting}[language=C++]
+myArray[0] = 7; // 数组第一个元素设置为 7
+\end{lstlisting}
+
+然而考虑以下 \acode{IntList} 类，其拥有一个数组的成员变量：
+
+\begin{lstlisting}[language=C++]
+class IntList
+{
+private:
+    int m_list[10]{};
+};
+
+int main()
+{
+    IntList list{};
+    // 如何从 m_list 中访问元素？
+    return 0;
+}
+\end{lstlisting}
+
+由于 m\_list 成员变量是私有的，我们不能直接访问它。这就意味着不能直接 get 或 set m\_list 中的数值。
+那么问题该如何解决呢？
+
+不使用操作符重载的情况下：
+
+\begin{lstlisting}[language=C++]
+class IntList
+{
+private:
+    int m_list[10]{};
+
+public:
+    void setItem(int index, int value) { m_list[index] = value; }
+    int getItem(int index) const { return m_list[index]; }
+};
+\end{lstlisting}
+
+可以工作，但是不是特别的用户友好。考虑以下案例：
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    IntList list{};
+    list.setItem(2, 3);
+
+    return 0;
+}
+\end{lstlisting}
+
+这里是设置第二个元素为 3 呢，还是第三个元素为 2？不查看 \acode{setItem()} 定义的情况下，明显是不清晰的。
+
+当然也可以直接返回整个数组并使用操作符$\left[\right]$ 来访问元素
+
+\begin{lstlisting}[language=C++]
+class IntList
+{
+private:
+    int m_list[10]{};
+
+public:
+    int* getList() { return m_list; }
+};
+\end{lstlisting}
+
+虽然可以工作，但是语法上很奇怪：
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    IntList list{};
+    list.getList()[2] = 3;
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{重载操作符$\left[\right]$}
+
+然而一个更好的方案是重载操作符$\left[\right]$ 使得可以访问 m\_list 的元素。下标操作符必须以成员函数的方式来进行重载。
+一个重载的操作符$\left[\right]$ 函数总是接受一个参数：用户提供在方括号中间的值。
+
+\begin{lstlisting}[language=C++]
+class IntList
+{
+private:
+    int m_list[10]{};
+
+public:
+    int& operator[] (int index);
+};
+
+int& IntList::operator[] (int index)
+{
+    return m_list[index];
+}
+\end{lstlisting}
+
+现在，任何使用对 IntList 类使用下标操作符$\left[\right]$，编译器将会返回 m\_list 成员变量中相应的元素！
+这就使得直接对 m\_list 进行 get 和 set 成为可能：
+
+\begin{lstlisting}[language=C++]
+IntList list{};
+list[2] = 3; // set 一个值
+std::cout << list[2] << '\n'; // get 一个值
+
+return 0;
+\end{lstlisting}
+
+这样子简单的语法以及理解都做到了。当 \acode{list[2]} 被解析时，编译器首先检查是否存在一个重载的操作符$\left[\right]$ 函数。
+如果存在，那么传递方括号中的值作为参数传入函数。
+
+注意尽管用户可以为函数提供默认值，然而使用操作符$\left[\right]$ 时不提供下标在方括号中并不认为是一个合理的语法，因此没有意义。
+
+Tip：C++23 将为操作符$\left[\right]$ 添加若干下标的支持。
+
+\subsubsection*{为什么操作符$\left[\right]$ 返回一个引用}
+
+让我们观察一下 \acode{list[2] = 3} 是如何被解析的。由于下标操作符相较于赋值操作符拥有更高的优先级，\acode{list[2]} 先被解析。
+\acode{list[2]} 调用操作符$\left[\right]$，其被我们定义为返回 \acode{list.m_list[2]} 的引用。因为操作符$\left[\right]$
+返回的是一个引用，它返回的是真实的 \acode{list.m_list[2]} 数组元素。部分被解析的表达式变成了 \acode{list.m_list[2] = 3}，
+即一个直接的整数赋值。
+
+在 9.2 值分类（左值与右值）中，学到了在赋值声明左侧的任何值都必须是一个左值（即一个拥有真实内存地址的变量）。因为操作符$\left[\right]$
+可以在赋值声明中左侧使用（例如 \acode{list[2] = 3}），那么操作符$\left[\right]$ 的返回值必须为左值。事实就是引用总是左值，
+因为仅可以使用引用变量的内存地址。因此返回引用满足了编译器所需要的返回左值。
+
+思考一下如果操作符$\left[\right]$ 是值返回了一个整数而不是引用。\acode{list[2]} 则会调用操作符$\left[\right]$，
+其返回的是 \acode{list.m_list[2]} \textit{的值}。举个例子，如果 \acode{m_list[2]} 本来拥有的值是 6，
+操作符$\left[\right]$ 将返回值 6。那么 \acode{list[2] = 3} 将被解析为 \acode{6 = 3}，这将毫无意义！如果这么做了，
+编译器则会抱怨：
+
+\begin{lstlisting}
+error C2106: '=' : left operand must be l-value
+\end{lstlisting}
+
+\subsubsection*{处理 const 对象}
+
+上述的 IntList 例子中，操作符$\left[\right]$ 是非 const 的，因此我们可以用它作为左值来修改非 const 对象的状态。
+然而，如果 IntList 对象是 const 的呢？这种情况下是无法调用非 const 版本的操作符$\left[\right]$，因为这会允许潜在的修改一个 const 对象的状态。
+
+好消息是我们可以分开定义一个非 const 版本以及一个 const 版本的操作符$\left[\right]$。非 const 版本将会使用非 const 对象，
+而 const 版本则使用 const 对象。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class IntList
+{
+private:
+    int m_list[10]{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }; // 为了演示，这里给一些初始值
+
+public:
+    int& operator[] (int index);
+    int operator[] (int index) const; // 也可以返回 const int& 如果返回的是一个非基础类型
+};
+
+int& IntList::operator[] (int index) // 对于非 const 对象而言：可以用于赋值
+{
+    return m_list[index];
+}
+
+int IntList::operator[] (int index) const // 对于 const 对象而言：仅可以用于访问
+{
+    return m_list[index];
+}
+
+int main()
+{
+    IntList list{};
+    list[2] = 3; // 可行：调用非 const 版本的 operator[]
+    std::cout << list[2] << '\n';
+
+    const IntList clist{};
+    clist[2] = 3; // 编译错误：调用 const 版本的 operator[]，即返回值。不可用于赋值，因为其为右值。
+    std::cout << clist[2] << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{错误检查}
+
+重载下标操作符的另一个好处就是我们可以安全的进行访问而不是直接访问数组。同侧人员，当访问数组时，下标操作符并不会检查索引是否有效。
+例如编译器不会抱怨以下代码：
+
+\begin{lstlisting}[language=C++]
+int list[5]{};
+list[7] = 3; // 索引 7 超出边界了！
+\end{lstlisting}
+
+然而如果知道数组的大小，我们可以使重载下标操作符进行检查确保索引在边界内：
+
+\begin{lstlisting}[language=C++]
+#include <cassert> // assert()
+#include <iterator> // std::size()
+
+class IntList
+{
+private:
+    int m_list[10]{};
+
+public:
+    int& operator[] (int index);
+};
+
+int& IntList::operator[] (int index)
+{
+    assert(index >= 0 && index < std::size(m_list));
+
+    return m_list[index];
+}
+\end{lstlisting}
+
+上述例子中使用了 \acode{assert()} 函数（引用于 \acode{cassert} 头文件中）来确保索引有效。如果在 assert 中的表达式解析为 false 时
+（意味着用户传入了无效索引），程序则会带上报错信息被终结，这就比另一种方式（污染内存）更好了。这可能是检查类似这种问题的最通常的办法了。
+
+\subsubsection*{不要混淆对象的指针与重载操作符$\left[\right]$}
+
+如果尝试调用操作符$\left[\right]$ 在一个对象的指针上，C++ 将假设用户在尝试索引该类型的数组。
+
+考虑下列代码：
+
+\begin{lstlisting}[language=C++]
+#include <cassert> // for assert()
+#include <iterator> // for std::size()
+
+class IntList
+{
+private:
+    int m_list[10]{};
+
+public:
+    int& operator[] (int index);
+};
+
+int& IntList::operator[] (int index)
+{
+    assert(index >= 0 && index < std::size(m_list));
+
+    return m_list[index];
+}
+
+int main()
+{
+    IntList* list{ new IntList{} };
+    list [2] = 3; // 错误：这会假设我们在访问 IntLists 的数组的索引 2
+    delete list;
+
+    return 0;
+}
+\end{lstlisting}
+
+因为我们不能对一个 IntList 赋值一个整数，这并不能通过编译。然而，如果赋值整数是有效的，这将被编译并运行，最终得到未定义的结果。
+
+规则：确保没用尝试对一个对象的指针进行重载操作符$\left[\right]$ 的调用。
+
+合理的语法将会是先解引用（确保在操作符$\left[\right]$ 之前使用括号，因为操作符$\left[\right]$ 的优先级比操作符* 要高），
+接着再调用操作符$\left[\right]$：
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    IntList* list{ new IntList{} };
+    (*list)[2] = 3; // get our IntList object, then call overloaded operator[]
+    delete list;
+
+    return 0;
+}
+\end{lstlisting}
+
+这很丑并且容易出错。最好的办法就是不要对不必要的对象设置指针。
+
+\subsubsection*{函数参数并不是必须为一个整数}
+
+如上所述 C++ 会传递方括号中间的值给到重载函数。大多数情况下会是一个整数值。然而这并不是必须的 --
+实际上用户可以定义自己的重载操作符$\left[\right]$ 来获取任何所需要的类型。可以定义操作符$\left[\right]$ 获取 double，
+一个字符串，或者是任何其他类型。
+
+一个荒谬的例子用于展示它是如何工作的：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <string_view> // C++17
+
+class Stupid
+{
+private:
+
+public:
+	void operator[] (std::string_view index);
+};
+
+// 重载操作符[] 来打印什么东西并没有意义
+// 但是这是简单的办法来展示函数参数可以为非整数
+void Stupid::operator[] (std::string_view index)
+{
+	std::cout << index;
+}
+
+int main()
+{
+	Stupid stupid{};
+	stupid["Hello, world!"];
+
+	return 0;
+}
+\end{lstlisting}
+
+正如预期，打印：
+
+\begin{lstlisting}[language=C++]
+Hello, world!
+\end{lstlisting}
+
+当编写某种类的时候，重载操作符$\left[\right]$ 并获取字符串参数可以很有用，例如使用字符串作为索引。
+
+\end{document}
