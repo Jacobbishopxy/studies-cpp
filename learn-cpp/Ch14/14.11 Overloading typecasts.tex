@@ -1,0 +1,175 @@
+
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{11}{Overloading typecasts}
+
+在 8.5 显式类型转换（casting）以及 static\_cast 中学习到了 C++ 允许用户转换类型。C++ 直到如何转换内建的数据类型。
+然而，它不知道如何转换任何用户定义的类。这就是重载类型转换操作符的意义所在。
+
+\textbf{用户定义转换} user-defined conversions 允许我们转换类成为另一种数据类型。
+
+\begin{lstlisting}[language=C++]
+class Cents
+{
+private:
+    int m_cents;
+public:
+    Cents(int cents=0)
+        : m_cents{ cents }
+    {
+    }
+
+    int getCents() const { return m_cents; }
+    void setCents(int cents) { m_cents = cents; }
+};
+\end{lstlisting}
+
+这个类非常的简单：它存储了 cents 为整数，提供访问函数用以 get 和 set cents 的数量，同时也提供了一个构造函数用于转换 int 成为一个 Cents。
+
+如果可以转换一个 int 成为 Cents，那么对于我们而言，转换 Cents 回一个 int 是否同样有意义？某些情况下，这可能不合理，但是现在这种情况下是合理的。
+
+上述的例子中需要使用 \acode{getCents} 来转换 Cents 变量成一个整数，因此可以使用 \acode{printInt()} 来进行打印：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+void printInt(int value)
+{
+    std::cout << value;
+}
+
+int main()
+{
+    Cents cents{ 7 };
+    printInt(cents.getCents()); // print 7
+
+    std::cout << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+如果已经编写了大量的函数用于接受整数作为参数，代码再调用 \acode{getCents()} 就会变得非常凌乱。
+
+为了让事情变得简单，我们可以通过重载 int 的类型转换来提供一个用户定义的转换。这样使得可以直接转换 Cents 成为 int。
+以下代码展示了如何做到的：
+
+\begin{lstlisting}[language=C++]
+class Cents
+{
+private:
+    int m_cents;
+public:
+    Cents(int cents=0)
+        : m_cents{ cents }
+    {
+    }
+
+    // 重载 int 转换
+    operator int() const { return m_cents; }
+
+    int getCents() const { return m_cents; }
+    void setCents(int cents) { m_cents = cents; }
+};
+\end{lstlisting}
+
+有三点需要注意的地方：
+
+\begin{enumerate}
+  \item 为了重载函数用于转换类成为一个 int，我们需要编写一个名为 \acode{operator int()} 的函数在类中。
+        注意在 \acode{operator} 与需要转换的类型之间有一个空格。
+  \item 用户定义的转换不接受参数，因为没有办法给它们传递参数。
+  \item 用户定义的转换没有返回类型，C++ 假设用户会返回正确的类型。
+\end{enumerate}
+
+现在可以像这样调用 \acode{printInt()} 了：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    Cents cents{ 7 };
+    printInt(cents); // 打印 7
+
+    std::cout << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+编译器将首先注意到函数 \acode{printInt} 接受一个整数类型。接着注意到变量 cents 并不是一个 int。
+最后，编译器会查看用户是否提供了转换 Cents 成为 int 的方法。这里将调用操作符 int() 函数，即返回一个 int，
+接着返回的 int 将会被传递给 \acode{printInt}。
+
+也可以显式的转换 Cents 变量成为一个 int：
+
+\begin{lstlisting}[language=C++]
+Cents cents{ 7 };
+int c{ static_cast<int>(cents) };
+\end{lstlisting}
+
+用户可以提供任何希望用到的数据类型转换，包括用户自定义的数据类型！
+
+这里是一个新的称为 Dollars 的提供了重载 Cents 转换的类：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class Cents
+{
+private:
+    int m_cents;
+public:
+    Cents(int cents=0)
+        : m_cents{ cents }
+    {
+    }
+
+    // 重载 int 转换
+    operator int() const { return m_cents; }
+
+    int getCents() const { return m_cents; }
+    void setCents(int cents) { m_cents = cents; }
+};
+
+class Dollars
+{
+private:
+    int m_dollars;
+public:
+    Dollars(int dollars=0)
+        : m_dollars{ dollars }
+    {
+    }
+
+    // 允许我们将 Dollars 转换成 Cents
+    operator Cents() const { return Cents { m_dollars * 100 }; }
+};
+
+void printCents(Cents cents)
+{
+    std::cout << cents; // cents 将被隐式转换成为一个 int
+}
+
+int main()
+{
+    Dollars dollars{ 9 };
+    printCents(dollars); // dollars 将被隐式转换成为一个 Cents
+
+    std::cout << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+900
+\end{lstlisting}
+
+
+\end{document}
