@@ -1,0 +1,186 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{10}{Overloading the parenthesis operator}
+
+迄今为止我们学习到的所有重载操作符都是用户定义操作符参数的类型，而没有参数的数量（根据操作符的类型而固定）。
+例如，操作符== 总是需要两个参数，而操作符! 总是一个。圆括号操作符（操作符()）是一个特别有趣的操作符，它允许用户同时设定参数的类型与数量。
+
+有两件事需要记住：首先，圆括号操作符必须以成员函数的方式实现；其次，在非 OO 的 C++ 中，操作符() 是用于调用函数的。
+在类的情况下，操作符() 仅是一个与任何其他重载操作符一样的普通操作符，即调用一个函数（被称为操作符()）。
+
+\subsubsection*{一个例子}
+
+让我们来看一个适用于重载这个操作符的例子：
+
+\begin{lstlisting}[language=C++]
+class Matrix
+{
+private:
+    double data[4][4]{};
+};
+\end{lstlisting}
+
+Matrix 是线性代数的核心组件，通常用于几何建模以及 3D 图像计算。本例的矩阵是一个 4 乘 4 的二维 double 数组。
+
+上一章讲到了可以重载操作符$\left[\right]$ 来提供直接访问私有的一维数组的能力。然而本例中，我们希望访问的是私有的二维数组。
+因为操作符$\left[\right]$ 局限于单个参数，索引二维数组的时候并不高效。
+
+然而由于操作符() 可以接受任意数量的参数，我们可以声明一个版本的操作符() 来接受两个整数索引参数，并且使用它们来访问二维数组。
+
+\begin{lstlisting}[language=C++]
+#include <cassert> // for assert()
+
+class Matrix
+{
+private:
+    double m_data[4][4]{};
+
+public:
+    double& operator()(int row, int col);
+    double operator()(int row, int col) const; // 用作于 const 对象
+};
+
+double& Matrix::operator()(int row, int col)
+{
+    assert(col >= 0 && col < 4);
+    assert(row >= 0 && row < 4);
+
+    return m_data[row][col];
+}
+
+double Matrix::operator()(int row, int col) const
+{
+    assert(col >= 0 && col < 4);
+    assert(row >= 0 && row < 4);
+
+    return m_data[row][col];
+}
+\end{lstlisting}
+
+现在可以定义一个 Matrix 并访问其元素：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    Matrix matrix;
+    matrix(1, 2) = 4.5;
+    std::cout << matrix(1, 2) << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+4.5
+\end{lstlisting}
+
+现在让我们再次重载操作符()，这一次不接受任何参数：
+
+\begin{lstlisting}[language=C++]
+#include <cassert> // for assert()
+class Matrix
+{
+private:
+    double m_data[4][4]{};
+
+public:
+    double& operator()(int row, int col);
+    double operator()(int row, int col) const;
+    void operator()();
+};
+
+double& Matrix::operator()(int row, int col)
+{
+    assert(col >= 0 && col < 4);
+    assert(row >= 0 && row < 4);
+
+    return m_data[row][col];
+}
+
+double Matrix::operator()(int row, int col) const
+{
+    assert(col >= 0 && col < 4);
+    assert(row >= 0 && row < 4);
+
+    return m_data[row][col];
+}
+
+void Matrix::operator()()
+{
+    // reset all elements of the matrix to 0.0
+    for (int row{ 0 }; row < 4; ++row)
+    {
+        for (int col{ 0 }; col < 4; ++col)
+        {
+            m_data[row][col] = 0.0;
+        }
+    }
+}
+\end{lstlisting}
+
+现在可以声明一个 Matrix 同时访问其元素：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    Matrix matrix{};
+    matrix(1, 2) = 4.5;
+    matrix(); // erase matrix
+    std::cout << matrix(1, 2) << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+0
+\end{lstlisting}
+
+由于操作符() 非常的灵活，它可以被用于很多不同的目的。然而这是强烈不建议的行为，因为 () 符号并没有给与任何有关操作符的指示。
+上述的例子中，清除的功能更好的做法是调用一个 \acode{clear()} 或是 \acode{erase()} 的函数，因为 \acode{matrix.erase()}
+相较于 \acode{matrix()} 更便于理解。
+
+\subsubsection*{函子的乐趣}
+
+操作符() 同样也被广泛的用于实现 \textbf{函子} functor（或 \textbf{function object}），即类似于函数的类。
+函子比普通函数的好处在于函子可以存储数据于成员变量中（因为它们是类）。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class Accumulator
+{
+private:
+    int m_counter{ 0 };
+
+public:
+    int operator() (int i) { return (m_counter += i); }
+};
+
+int main()
+{
+    Accumulator acc{};
+    std::cout << acc(10) << '\n'; // prints 10
+    std::cout << acc(20) << '\n'; // prints 30
+
+    return 0;
+}
+\end{lstlisting}
+
+注意使用 Accumulator 像是在做一个普通的函数调用，但是 Accumulator 类存储了一个积累的值。
+
+这里有可能会疑惑为什么我们不能用普通函数以及 static 本地变量来保存函数调用后的数据来做同样的事情呢。
+可以，但是因为函数仅有一个全局实例，而始终只能使用一个将会是很大的限制。
+而函子，我们可以实例化若干个函子对象，并且非常自然的使用它们。
+
+\end{document}

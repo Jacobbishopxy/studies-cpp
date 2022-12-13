@@ -94,7 +94,9 @@ A personal C-plus-plus study note.
 
    - enabling polymorphic copy construction
 
-1. [grade_map](./learn-cpp-codes/grade_map/main.cpp): overloading the subscript operator[]
+1. [subscript_operator](./learn-cpp-codes/subscript_operator/main.cpp): overloading the subscript operator[]
+
+1. [parenthesis_operator](./learn-cpp-codes/parenthesis_operator/main.cpp): overloading the parenthesis operator()
 
 ## Vscode settings
 
