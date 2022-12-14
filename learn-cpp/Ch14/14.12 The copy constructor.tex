@@ -1,0 +1,293 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{12}{The copy constructor}
+
+\subsubsection*{回忆初始化的类型}
+
+首先让我们回忆一下 C++ 提供了哪些类型的初始化：直接（圆括号）初始化，标准（花括号）初始化以及拷贝（等号）初始化。
+
+\begin{lstlisting}[language=C++]
+#include <cassert>
+#include <iostream>
+
+class Fraction
+{
+private:
+    int m_numerator{};
+    int m_denominator{};
+
+public:
+    // Default constructor
+    Fraction(int numerator=0, int denominator=1)
+        : m_numerator{numerator}, m_denominator{denominator}
+    {
+        assert(denominator != 0);
+    }
+
+    friend std::ostream& operator<<(std::ostream& out, const Fraction& f1);
+};
+
+std::ostream& operator<<(std::ostream& out, const Fraction& f1)
+{
+	out << f1.m_numerator << '/' << f1.m_denominator;
+	return out;
+}
+\end{lstlisting}
+
+我们可以做一个直接初始化：
+
+\begin{lstlisting}[language=C++]
+int x(5); // 直接初始化一个整数
+Fraction fiveThirds(5, 3); // 直接初始化一个 Fraction，调用 Fraction(int, int) 构造函数
+\end{lstlisting}
+
+C++11 中可以标准初始化：
+
+\begin{lstlisting}[language=C++]
+int x { 5 }; // 标准初始化一个整数
+Fraction fiveThirds {5, 3}; // 标准初始化一个 Fraction，调用 Fraction(int, int) 构造函数
+\end{lstlisting}
+
+最后是拷贝初始化：
+
+\begin{lstlisting}[language=C++]
+int x = 6; // 拷贝初始化一个整数
+Fraction six = Fraction(6); // 拷贝初始化一个 Fraction，将调用 Fraction(6, 1)
+Fraction seven = 7; // 拷贝初始化一个 Fraction。编译器将会尝试寻找转换 7 成为 Fraction 的方法，这会唤起 Fraction(7, 1) 构造函数。
+\end{lstlisting}
+
+使用直接和标准初始化，对象被直接创建。然而拷贝初始化会更复杂一些。我们将在下一节开始深入探讨拷贝初始化，现在为了更高效的学习，我们需要迂回一下。
+
+\subsubsection*{拷贝构造函数}
+
+考虑以下代码：
+
+\begin{lstlisting}[language=C++]
+#include <cassert>
+#include <iostream>
+
+class Fraction
+{
+private:
+    int m_numerator{};
+    int m_denominator{};
+
+public:
+    // 默认构造函数
+    Fraction(int numerator=0, int denominator=1)
+        : m_numerator{numerator}, m_denominator{denominator}
+    {
+        assert(denominator != 0);
+    }
+
+    friend std::ostream& operator<<(std::ostream& out, const Fraction& f1);
+};
+
+std::ostream& operator<<(std::ostream& out, const Fraction& f1)
+{
+  out << f1.m_numerator << '/' << f1.m_denominator;
+  return out;
+}
+
+int main()
+{
+  Fraction fiveThirds { 5, 3 }; // 标准初始化一个 Fraction，调用 Fraction(int, int) 构造函数
+  Fraction fCopy { fiveThirds }; // 标准初始化一个 Fraction -- 用哪个构造函数？
+  std::cout << fCopy << '\n';
+}
+\end{lstlisting}
+
+如果编译了程序会发现可以通过，并且打印：
+
+\begin{lstlisting}
+5/3
+\end{lstlisting}
+
+让我们仔细研究程序是如何工作的。
+
+变量 fiveThirds 被标准初始化，并调用了 \acode{Fraction(int, int)} 构造函数。这里并不出奇，那么第二行呢？
+变量 fCopy 很明显也是一个初始化，构造函数肯定是被调用了的。那么这个被调用的构造函数是什么？
+
+答案是调用了 Fraction 的拷贝构造函数。\textbf{拷贝构造函数} copy constructor 是一种特殊的构造函数，
+用于从一个已有对象（相同类型）来创建一个新的拷贝对象。类似于默认构造函数，如果用户不提供那么 C++ 将会创造一个公有的拷贝构造函数。
+因为编译器并不了解用户的类，默认情况下，被编译器创造的拷贝构造函数会使用名为成员向初始化的初始化方法。
+\textbf{成员向初始化} memberwise initialization 简单的意为每个成员的拷贝直接从类的成员中进行拷贝。
+上述例子中 \acode{fCopy.m_numerator} 将会从 \acode{fiveThirds.m_numerator} 开始进行初始化，以此类推。
+
+正如同显式定义一个默认构造函数那样，我们同样可以显式定义一个拷贝构造函数。
+
+\begin{lstlisting}[language=C++]
+#include <cassert>
+#include <iostream>
+
+class Fraction
+{
+private:
+    int m_numerator{};
+    int m_denominator{};
+
+public:
+    // 默认构造函数
+    Fraction(int numerator=0, int denominator=1)
+        : m_numerator{numerator}, m_denominator{denominator}
+    {
+        assert(denominator != 0);
+    }
+
+    // 拷贝构造函数
+    Fraction(const Fraction& fraction)
+        : m_numerator{fraction.m_numerator}, m_denominator{fraction.m_denominator}
+        // 注意：我们可以直接访问参数 fraction 的成员，因为处在 Fraction 类内部
+    {
+        // 这里不需要检查分母是否为 0，因为 fraction 必须是已有的合法 Fraction
+        std::cout << "Copy constructor called\n"; // just to prove it works
+    }
+
+    friend std::ostream& operator<<(std::ostream& out, const Fraction& f1);
+};
+
+std::ostream& operator<<(std::ostream& out, const Fraction& f1)
+{
+	out << f1.m_numerator << '/' << f1.m_denominator;
+	return out;
+}
+
+int main()
+{
+	Fraction fiveThirds { 5, 3 }; // 直接初始化一个 Fraction，调用 Fraction(int, int) 构造函数
+	Fraction fCopy { fiveThirds }; // 直接初始化 -- 通过 Fraction 拷贝构造函数
+	std::cout << fCopy << '\n';
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}[language=C++]
+5/3
+\end{lstlisting}
+
+例子中定义的拷贝构造函数使用了成员向的初始化，其功能等同于 C++ 提供的默认构造函数，只不过加了打印声明。
+
+\subsubsection*{拷贝构造函数的参数必须是引用}
+
+对于拷贝构造函数而言，其参数必须是一个（const）引用。
+这有道理：如果是值传递，则需要拷贝构造函数去拷贝参数成为拷贝构造函数的入参（也就是无限递归）。
+
+\subparagraph*{阻止拷贝}
+
+可以使拷贝构造函数私有来阻止拷贝：
+
+\begin{lstlisting}[language=C++]
+#include <cassert>
+#include <iostream>
+
+class Fraction
+{
+private:
+    int m_numerator{};
+    int m_denominator{};
+
+    // 拷贝构造函数（私有）
+    Fraction(const Fraction& fraction)
+        : m_numerator{fraction.m_numerator}, m_denominator{fraction.m_denominator}
+    {
+        // 这里不需要检查分母是否为 0，因为 fraction 必须是已有的合法 Fraction
+        std::cout << "Copy constructor called\n"; // just to prove it works
+    }
+
+public:
+    // Default constructor
+    Fraction(int numerator=0, int denominator=1)
+        : m_numerator{numerator}, m_denominator{denominator}
+    {
+        assert(denominator != 0);
+    }
+
+    friend std::ostream& operator<<(std::ostream& out, const Fraction& f1);
+};
+
+std::ostream& operator<<(std::ostream& out, const Fraction& f1)
+{
+	out << f1.m_numerator << '/' << f1.m_denominator;
+	return out;
+}
+
+int main()
+{
+	Fraction fiveThirds { 5, 3 }; // 直接初始化一个 Fraction，调用 Fraction(int, int) 构造函数
+	Fraction fCopy { fiveThirds }; // 拷贝初始化是私有的，这行编译错误
+	std::cout << fCopy << '\n';
+}
+\end{lstlisting}
+
+\subparagraph*{拷贝构造函数可能被省略}
+
+考虑下列代码：
+
+\begin{lstlisting}[language=C++]
+#include <cassert>
+#include <iostream>
+
+class Fraction
+{
+private:
+	int m_numerator{};
+	int m_denominator{};
+
+public:
+  // 默认构造函数
+  Fraction(int numerator=0, int denominator=1)
+      : m_numerator{numerator}, m_denominator{denominator}
+  {
+      assert(denominator != 0);
+  }
+
+  // 拷贝构造函数
+	Fraction(const Fraction &fraction)
+		: m_numerator{fraction.m_numerator}, m_denominator{fraction.m_denominator}
+	{
+		std::cout << "Copy constructor called\n"; // just to prove it works
+	}
+
+	friend std::ostream& operator<<(std::ostream& out, const Fraction& f1);
+};
+
+std::ostream& operator<<(std::ostream& out, const Fraction& f1)
+{
+	out << f1.m_numerator << '/' << f1.m_denominator;
+	return out;
+}
+
+int main()
+{
+	Fraction fiveThirds { Fraction { 5, 3 } };
+	std::cout << fiveThirds;
+	return 0;
+}
+\end{lstlisting}
+
+思考一下这个代码是如何工作的。首先直接初始化了一个匿名的 Fraction 对象，使用了 \acode{Fraction(int, int)} 构造函数。
+接着使用该匿名对象作为 Fraction fiveThirds 的初始对象。因为匿名对象是一个 Fraction，那么 fiveThirds 应该调用拷贝构造函数对么？
+
+编译并运行这段程序，可能会认为答案如下：
+
+\begin{lstlisting}[language=C++]
+copy constructor called
+5/3
+\end{lstlisting}
+
+而实际上，更可能得到的答案是这样：
+
+\begin{lstlisting}[language=C++]
+5/3
+\end{lstlisting}
+
+注意初始化一个匿名对象接着使用其直接初始化对象花费了两步（一是创建匿名对象，一是调用拷贝构造函数）。
+然而结果却是直接初始化，即仅花费了一步。
+
+因为这个原因，这种情况下编译器允许优化调用拷贝函数并直接做一次的直接初始化。
+这个以优化为目的的省略特定拷贝（或移动）的步骤被称为 \textbf{elision}。
+
+\end{document}

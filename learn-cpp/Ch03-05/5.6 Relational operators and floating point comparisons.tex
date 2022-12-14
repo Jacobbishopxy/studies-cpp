@@ -1,0 +1,73 @@
+
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{6}{Relational operators and floating point comparisons}
+
+\textbf{关系操作符} relational operators 是用于比较两个值的操作符。一共有六种：
+
+\begin{center}
+    \begin{tiny}
+        \begin{tabularx}{ 1\textwidth}{
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X
+                | >{\raggedright\arraybackslash}X |
+            }
+            \hline
+            操作符                    & 符号 & 形式     & 操作                                                       \\
+            \hline
+            Greater than           & >  & x > y  & true if x is greater than y, false otherwise             \\
+            Less than              & <  & x < y  & true if x is less than y, false otherwise                \\
+            Greater than or equals & >= & x >= y & true if x is greater than or equal to y, false otherwise \\
+            Less than or equals    & <= & x <= y & true if x is less than or equal to y, false otherwise    \\
+            Equality               & == & x == y & true if x equals y, false otherwise                      \\
+            Inequality             & != & x != y & true if x does not equal y, false otherwise              \\
+            \hline
+        \end{tabularx}
+    \end{tiny}
+\end{center}
+
+\subsubsection*{比较计算后的浮点值会出问题}
+
+考虑以下程序：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    double d1{ 100.0 - 99.99 }; // should equal 0.01 mathematically
+    double d2{ 10.0 - 9.99 }; // should equal 0.01 mathematically
+
+    if (d1 == d2)
+        std::cout << "d1 == d2" << '\n';
+    else if (d1 > d2)
+        std::cout << "d1 > d2" << '\n';
+    else if (d1 < d2)
+        std::cout << "d1 < d2" << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+变量 d1 与 d2 应该都为 0.01，然而程序打印了非预期的结果：
+
+\begin{lstlisting}[language=C++]
+d1 > d2
+\end{lstlisting}
+
+如果在调试器中检查 d1 与 d2 的值可能会发现 d1 = 0.0100000000000005116 以及 d2 = 0.0099999999999997868。
+两个数字都接近 0.01，但是 d1 要大一些，而 d2 要小一些。
+
+如果需要高精度，那么使用任何关系操作符来比较浮点数是很危险的。这是因为浮点数并不精确，且对其进行小的取整可能会导致非预期的结果。
+
+\subsubsection*{浮点数等式}
+
+使用等式操作符（!= 以及 ==）的问题更大。考虑操作符== 是在运算成员完全相等的情况下返回 true。
+由于最小的取整错误都会导致两个浮点数并不相等，操作符== 具有返回 false 的风险，即便预期是 true 的情况。
+
+因为这个原因，浮点运算成员使用这类操作符应该通常都被避免。
+
+\end{document}
