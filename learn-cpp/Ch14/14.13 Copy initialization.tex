@@ -1,0 +1,179 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{13}{Copy initialization}
+
+考虑以下代码：
+
+\begin{lstlisting}[language=C++]
+int x = 5;
+\end{lstlisting}
+
+该声明使用了拷贝初始化来初始化一个新建值为 5 的 x 变量。
+
+而类的初始化稍微会复杂一些，因为它们使用了构造函数来进行初始化。本节将测试类的拷贝初始化的所有主题。
+
+\subsubsection*{类的拷贝初始化}
+
+给定的 Fraction 类：
+
+\begin{lstlisting}[language=C++]
+#include <cassert>
+#include <iostream>
+
+class Fraction
+{
+private:
+    int m_numerator;
+    int m_denominator;
+
+public:
+    // Default constructor
+    Fraction(int numerator=0, int denominator=1)
+        : m_numerator(numerator), m_denominator(denominator)
+    {
+        assert(denominator != 0);
+    }
+
+    friend std::ostream& operator<<(std::ostream& out, const Fraction& f1);
+};
+
+std::ostream& operator<<(std::ostream& out, const Fraction& f1)
+{
+  out << f1.m_numerator << '/' << f1.m_denominator;
+  return out;
+}
+\end{lstlisting}
+
+考虑以下：
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    Fraction six = Fraction(6);
+    std::cout << six;
+    return 0;
+}
+\end{lstlisting}
+
+如果尝试编译并运行它，会打印预期：
+
+\begin{lstlisting}
+6/1
+\end{lstlisting}
+
+这种样式的拷贝初始化被解析成等同于如下的样式：
+
+\begin{lstlisting}[language=C++]
+Fraction six(Fraction(6));
+\end{lstlisting}
+
+从上一节中学习到了，它潜在的调用了 \acode{Fraction(int, int)} 以及 Fraction 的拷贝构造函数（可能会因为性能原因被省略）。
+然而由于省略并不是保证的（在 C++17 之前，省略不像现在是强制性的），所以最好是避免类的拷贝初始化，而是使用标准初始化。
+
+最佳实践：避免使用拷贝初始化，而是使用标准初始化。
+
+\subsubsection*{其它用到拷贝初始化的地方}
+
+还有其他一些地方又到了拷贝初始化，不过只有两个值得显式提及的。当传递或值返回一个类，这个过程使用了拷贝初始化。
+
+\begin{lstlisting}[language=C++]
+#include <cassert>
+#include <iostream>
+
+class Fraction
+{
+private:
+	int m_numerator;
+	int m_denominator;
+
+public:
+    Fraction(int numerator=0, int denominator=1)
+        : m_numerator(numerator), m_denominator(denominator)
+    {
+        assert(denominator != 0);
+    }
+
+	Fraction(const Fraction& copy) :
+		m_numerator(copy.m_numerator), m_denominator(copy.m_denominator)
+	{
+		std::cout << "Copy constructor called\n"; // 仅用于证明其有效
+	}
+
+	friend std::ostream& operator<<(std::ostream& out, const Fraction& f1);
+	int getNumerator() { return m_numerator; }
+	void setNumerator(int numerator) { m_numerator = numerator; }
+};
+
+std::ostream& operator<<(std::ostream& out, const Fraction& f1)
+{
+	out << f1.m_numerator << '/' << f1.m_denominator;
+	return out;
+}
+
+Fraction makeNegative(Fraction f) // 理想情况下应该使用 const 引用
+{
+    f.setNumerator(-f.getNumerator());
+    return f;
+}
+
+int main()
+{
+    Fraction fiveThirds(5, 3);
+    std::cout << makeNegative(fiveThirds);
+
+    return 0;
+}
+\end{lstlisting}
+
+上述代码中，函数 \acode{makeNegative} 值接受一个 Fraction。当程序运行时：
+
+\begin{lstlisting}
+Copy constructor called
+Copy constructor called
+-5/3
+\end{lstlisting}
+
+第一个拷贝构造函数调用发生在 fiveThirds 作为参数传递给 \acode{makeNegative()} 的入参。
+第二次调用发生在当 \acode{makeNegative()} 返回值被传递回 \acode{main()}。
+
+上述例子中，参数值传递以及返回值都不能被省略。然而在其他情况下，如果参数或返回值满足特定标准时，编译器可能会优化拷贝构造函数使其省略。
+例如：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+class Something
+{
+public:
+	Something() = default;
+	Something(const Something&)
+	{
+		std::cout << "Copy constructor called\n";
+	}
+};
+
+Something foo()
+{
+	return Something(); // 拷贝构造函数在这里与寻常情况一样被调用
+}
+Something goo()
+{
+	Something s;
+	return s; // 拷贝构造函数在这里与寻常情况一样被调用
+}
+
+int main()
+{
+	std::cout << "Initializing s1\n";
+	Something s1 = foo(); // 拷贝构造函数在这里与寻常情况一样被调用
+
+	std::cout << "Initializing s2\n";
+	Something s2 = goo(); // 拷贝构造函数在这里与寻常情况一样被调用
+}
+\end{lstlisting}
+
+上面的代码中将会调用拷贝构造函数 4 次 -- 然而由于拷贝省略，用户的编译器有可能将省略大部分或所有的情况。
+Visual Studio 2019 省略 3 次（没有省略 \acode{goo()} 的返回），以及 GCC 省略所有的 4 次。
+
+\end{document}

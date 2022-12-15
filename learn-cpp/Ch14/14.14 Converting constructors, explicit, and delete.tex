@@ -1,0 +1,277 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{14}{Converting constructors, explicit, and delete}
+
+默认情况下 C++ 视任何构造函数为隐式转换操作符。考虑下面代码：
+
+\begin{lstlisting}[language=C++]
+#include <cassert>
+#include <iostream>
+
+class Fraction
+{
+private:
+	int m_numerator;
+	int m_denominator;
+
+public:
+	Fraction(int numerator = 0, int denominator = 1)
+		 : m_numerator(numerator), m_denominator(denominator)
+	{
+		assert(denominator != 0);
+	}
+
+	Fraction(const Fraction& copy)
+		: m_numerator(copy.m_numerator), m_denominator(copy.m_denominator)
+	{
+		std::cout << "Copy constructor called\n";
+	}
+
+	friend std::ostream& operator<<(std::ostream& out, const Fraction& f1);
+	int getNumerator() { return m_numerator; }
+	void setNumerator(int numerator) { m_numerator = numerator; }
+};
+
+void printFraction(const Fraction& f)
+{
+	std::cout << f;
+}
+
+std::ostream& operator<<(std::ostream& out, const Fraction& f1)
+{
+	out << f1.m_numerator << '/' << f1.m_denominator;
+	return out;
+}
+
+int main()
+{
+	printFraction(6);
+
+	return 0;
+}
+\end{lstlisting}
+
+尽管函数 \acode{printFraction()} 预期一个 Fraction，我们提供的却是字面值整数 6。由于 Fraction 拥有一个构造函数将获取一个整数，
+编译器将隐式转化字面值 6 成为一个 Fraction 对象。
+这么做是借助于初始化 \acode{printFraction()} 参数 f 时使用了 \acode{Fraction(int, int)} 构造函数。
+
+因此上述代码打印：
+
+\begin{lstlisting}
+6/1
+\end{lstlisting}
+
+这个隐式转换作用于所有的初始化（直接与拷贝）。
+
+\subsubsection*{explicit 关键字}
+
+在 Fraction 案例中隐式转换是有意义的，但在其他情况下可能并不可取，或是导致非预期的行为：
+
+\begin{lstlisting}[language=C++]
+#include <string>
+#include <iostream>
+
+class MyString
+{
+private:
+	std::string m_string;
+public:
+	MyString(int x) // 分配 x 大小的字符串
+	{
+		m_string.resize(x);
+	}
+
+	MyString(const char* string) // 分配字符串用于存储字符串的值
+	{
+		m_string = string;
+	}
+
+	friend std::ostream& operator<<(std::ostream& out, const MyString& s);
+
+};
+
+std::ostream& operator<<(std::ostream& out, const MyString& s)
+{
+	out << s.m_string;
+	return out;
+}
+
+void printString(const MyString& s)
+{
+	std::cout << s;
+}
+
+int main()
+{
+	MyString mine = 'x'; // 可编译并使用 MyString(int)
+	std::cout << mine << '\n';
+
+	printString('x'); // 可编译并使用 MyString(int)
+	return 0;
+}
+\end{lstlisting}
+
+上述例子中，用户尝试通过一个字符来初始化字符串。
+由于字符是整数家庭的一部分，编译器使用了转换的构造函数 \acode{MyString(int)} 来隐式转换 char 成为 MyString。
+该程序打印 MyString 非预期的结果。同样的，调用 \acode{printString('x')} 导致隐式转换返回同样的问题。
+
+解决该问题的一种方法是使构造函数（以及转换函数）通过 explicit 关键字使它们变成显式的，做法是放置其在函数名前。
+构造函数与转换函数是显式的情况下将不会使用\textit{隐式}构造函数或拷贝初始化：
+
+\begin{lstlisting}[language=C++]
+#include <string>
+#include <iostream>
+
+class MyString
+{
+private:
+  std::string m_string;
+public:
+  // explicit 关键字使该构造函数的隐式转换变为不合法
+  explicit MyString(int x) // 分配 x 大小的字符串
+  {
+    m_string.resize(x);
+  }
+
+  MyString(const char* string) // 分配字符串用于存储字符串的值
+  {
+    m_string = string;
+  }
+
+  friend std::ostream& operator<<(std::ostream& out, const MyString& s);
+
+};
+
+std::ostream& operator<<(std::ostream& out, const MyString& s)
+{
+  out << s.m_string;
+  return out;
+}
+
+void printString(const MyString& s)
+{
+  std::cout << s;
+}
+
+int main()
+{
+  MyString mine = 'x'; // 编译错误，因为 MyString(int) 现在是 explicit 的，且没有任何与之匹配的
+  std::cout << mine;
+
+  printString('x'); // 编译错误，因为 MyString(int) 不能用于隐式转换
+
+  return 0;
+}
+\end{lstlisting}
+
+上述的程序不能通过编译，因为 \acode{MyString(int)} 变成了显式的了，且合适的转化构造函数不能被找到用于隐式转换 'x' 成为一个 MyString。
+
+然而注意让一个构造函数 explicit 仅阻止\textit{隐式}转换。显式转换（通过 casting）仍然是被允许的：
+
+\begin{lstlisting}[language=C++]
+std::cout << static_cast<MyString>(5); // 允许：显式转换 5 至 MyString(int)
+\end{lstlisting}
+
+直接或标准初始化仍然会转换参数来匹配（标准初始化不会做狭窄转换，但是会做其他类型的转换）：
+
+\begin{lstlisting}[language=C++]
+MyString str{'x'}; // 允许：初始化参数可能仍然被隐式转换来进行匹配
+\end{lstlisting}
+
+最佳实践：explicit 构造函数与用户定义转换成员函数可以阻止隐式转换错误。
+
+\subsubsection*{delete 关键字}
+
+MyString 的例子中，希望完全禁止 'x' 被转换成 MyString（无论是隐式或显式，因为结果并不符合直觉）。
+一种办法是添加 \acode{MyString(char)} 构造函数，并使其私有：
+
+\begin{lstlisting}[language=C++]
+#include <string>
+#include <iostream>
+
+class MyString
+{
+private:
+  std::string m_string;
+
+  MyString(char) // MyString(char) 类型的对象不能在类的外部进行构造
+  {
+  }
+
+public:
+  // explicit 关键字使得该构造函数的隐式转换不合法
+  explicit MyString(int x) // allocate string of size x
+  {
+    m_string.resize(x);
+  }
+
+  MyString(const char* string) // 分配字符串用于存储值
+  {
+    m_string = string;
+  }
+
+  friend std::ostream& operator<<(std::ostream& out, const MyString& s);
+
+};
+
+std::ostream& operator<<(std::ostream& out, const MyString& s)
+{
+  out << s.m_string;
+  return out;
+}
+
+int main()
+{
+  MyString mine('x'); // 编译错误，因为 MyString(char) 是私有的
+  std::cout << mine;
+  return 0;
+}
+\end{lstlisting}
+
+然而构造函数仍然可以在类的内部使用（私有访问仅对于调用该函数的非成员生效）。
+
+一个更好的方案来解决这个问题就是使用 “delete” 关键字：
+
+\begin{lstlisting}[language=C++]
+#include <string>
+#include <iostream>
+
+class MyString
+{
+private:
+  std::string m_string;
+
+public:
+  MyString(char) = delete; // 任何使用该构造函数的都视为错误
+
+  explicit MyString(int x)
+  {
+    m_string.resize(x);
+  }
+
+  MyString(const char* string)
+  {
+    m_string = string;
+  }
+
+  friend std::ostream& operator<<(std::ostream& out, const MyString& s);
+
+};
+
+std::ostream& operator<<(std::ostream& out, const MyString& s)
+{
+  out << s.m_string;
+  return out;
+}
+
+int main()
+{
+  MyString mine('x'); // 编译错误，因为 MyString(char) 是 deleted 的
+  std::cout << mine;
+  return 0;
+}
+\end{lstlisting}
+
+\end{document}
