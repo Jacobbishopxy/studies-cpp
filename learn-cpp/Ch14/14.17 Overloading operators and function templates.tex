@@ -1,0 +1,367 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{17}{Overloading operators and function templates}
+
+在 8.14 函数模版实例化中讨论了编译器是如何使用函数模板来实例化函数并接着进行编译的。同样注意这些函数也可能不会编译，
+如果函数模版中的代码尝试执行一些真实类型不支持的操作（例如让整数值 \acode{1} 与 \acode{std::string} 相加）。
+
+本章我们将参考几个例子，实例化的函数并不会编译因为真实类类型并不支持这些操作符，并且展示如何定义这些操作符使得实例化的函数能通过编译。
+
+\subsubsection*{操作符，函数调用，以及函数模板}
+
+首先创建一个简单的类：
+
+\begin{lstlisting}[language=C++]
+class Cents
+{
+private:
+    int m_cents{};
+public:
+    Cents(int cents)
+        : m_cents { cents }
+    {
+    }
+
+    friend std::ostream& operator<< (std::ostream& ostr, const Cents& c)
+    {
+        ostr << c.m_cents;
+        return ostr;
+    }
+};
+\end{lstlisting}
+
+并定义一个 \acode{max} 函数模板：
+
+\begin{lstlisting}[language=C++]
+template <typename T>
+const T& max(const T& x, const T& y)
+{
+    return (x < y) ? y : x;
+}
+\end{lstlisting}
+
+现在观察当尝试调用 \acode{max()} 在对象类型为 \acode{Cents} 上：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class Cents
+{
+private:
+    int m_cents{};
+public:
+    Cents(int cents)
+        : m_cents { cents }
+    {
+    }
+
+    friend std::ostream& operator<< (std::ostream& ostr, const Cents& c)
+    {
+        ostr << c.m_cents;
+        return ostr;
+    }
+};
+
+template <typename T>
+const T& max(const T& x, const T& y)
+{
+    return (x < y) ? y : x;
+}
+
+int main()
+{
+    Cents nickel{ 5 };
+    Cents dime{ 10 };
+
+    Cents bigger = max(nickel, dime);
+    std::cout << bigger << " is bigger\n";
+
+    return 0;
+}
+\end{lstlisting}
+
+C++ 将为 \acode{max()} 创建一个类似如下的模板实例：
+
+\begin{lstlisting}[language=C++]
+template <>
+const Cents& max(const Cents& x, const Cents& y)
+{
+    return (x < y) ? y : x;
+}
+\end{lstlisting}
+
+接着将尝试编译该函数。看到这里的问题了吗？C++ 不知道当 \acode{x} 与 \acode{y} 是 \acode{Cents} 类型的情况下，如何解析 \acode{x < y}！
+因此，这会产生一个编译错误。
+
+为了解决这个问题只需要简单的为任何想要使用 \acode{max} 的类重载操作符 \acode{operator<} 即可：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class Cents
+{
+private:
+    int m_cents {};
+public:
+    Cents(int cents)
+        : m_cents { cents }
+    {
+    }
+
+    friend bool operator< (const Cents& c1, const Cents& c2)
+    {
+        return (c1.m_cents < c2.m_cents);
+    }
+
+    friend std::ostream& operator<< (std::ostream& ostr, const Cents& c)
+    {
+        ostr << c.m_cents;
+        return ostr;
+    }
+};
+
+template <typename T>
+const T& max(const T& x, const T& y)
+{
+    return (x < y) ? y : x;
+}
+
+int main()
+{
+    Cents nickel{ 5 };
+    Cents dime { 10 };
+
+    Cents bigger = max(nickel, dime);
+    std::cout << bigger << " is bigger\n";
+
+    return 0;
+}
+\end{lstlisting}
+
+正如预期，打印：
+
+\begin{lstlisting}
+10 is bigger
+\end{lstlisting}
+
+\subsubsection*{另一个案例}
+
+现在看另外一个确实重载操作符而函数模板不能工作的例子。
+
+下列函数模板将计算数组对象的平均值：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+template <typename T>
+T average(const T* myArray, int numValues)
+{
+    T sum { 0 };
+    for (int count { 0 }; count < numValues; ++count)
+        sum += myArray[count];
+
+    sum /= numValues;
+    return sum;
+}
+
+int main()
+{
+    int intArray[] { 5, 3, 2, 1, 4 };
+    std::cout << average(intArray, 5) << '\n';
+
+    double doubleArray[] { 3.12, 3.45, 9.23, 6.34 };
+    std::cout << average(doubleArray, 4) << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+3
+5.535
+\end{lstlisting}
+
+可以看到内建类型都有效！
+
+现在看一下调用该函数在 \acode{Cents} 类上的表现：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+template <typename T>
+T average(const T* myArray, int numValues)
+{
+    T sum { 0 };
+    for (int count { 0 }; count < numValues; ++count)
+        sum += myArray[count];
+
+    sum /= numValues;
+    return sum;
+}
+
+class Cents
+{
+private:
+    int m_cents {};
+public:
+    Cents(int cents)
+        : m_cents { cents }
+    {
+    }
+};
+
+int main()
+{
+    Cents centsArray[] { Cents { 5 }, Cents { 10 }, Cents { 15 }, Cents { 14 } };
+    std::cout << average(centsArray, 4) << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+编译器变得狂暴并输出了成吨的错误信息！首个错误信息可能类似于这样：
+
+\begin{lstlisting}
+error C2679: binary << : no operator found which takes a right-hand operand of type Cents (or there is no acceptable conversion)
+\end{lstlisting}
+
+记住 \acode{average()} 返回一个 \acode{Cents} 对象，且我们在尝试使用 \acode{operator<<} stream 该对象至 \acode{std::cout}。
+然而我们并未为 \acode{Cents} 类定义 \acode{operator<<}。现在尝试一下：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+template <typename T>
+T average(const T* myArray, int numValues)
+{
+    T sum { 0 };
+    for (int count { 0 }; count < numValues; ++count)
+        sum += myArray[count];
+
+    sum /= numValues;
+    return sum;
+}
+
+class Cents
+{
+private:
+    int m_cents {};
+public:
+    Cents(int cents)
+        : m_cents { cents }
+    {
+    }
+
+    friend std::ostream& operator<< (std::ostream& out, const Cents& cents)
+    {
+        out << cents.m_cents << " cents ";
+        return out;
+    }
+};
+
+int main()
+{
+    Cents centsArray[] { Cents { 5 }, Cents { 10 }, Cents { 15 }, Cents { 14 } };
+    std::cout << average(centsArray, 4) << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+再次编译则获得另一个错误：
+
+\begin{lstlisting}
+error C2676: binary += : Cents does not define this operator or a conversion to a type acceptable to the predefined operator
+\end{lstlisting}
+
+这个错误实际上是由函数模板实例创建时调用 \acode{average(const Cents*, int)} 导致的。记住当调用一个模板函数时，编译器会“拓印”一个函数的拷贝，
+其参数类型（即占位符类型）会被替换为函数调用中的真实类型。这里是当 \acode{T} 为 \acode{Cents} 对象时的 \acode{average()} 函数模板实例：
+
+\begin{lstlisting}[language=C++]
+template <>
+Cents average(const Cents* myArray, int numValues)
+{
+    Cents sum { 0 };
+    for (int count { 0 }; count < numValues; ++count)
+        sum += myArray[count];
+
+    sum /= numValues;
+    return sum;
+}
+\end{lstlisting}
+
+之所以有报错信息的原因是因为这一行：
+
+\begin{lstlisting}[language=C++]
+sum += myArray[count];
+\end{lstlisting}
+
+这种情况下，\acode{sum} 是一个 \acode{Cents} 对象，但是我们并未为 \acode{Cents} 对象定义 \acode{operator+=}！
+我们仍将定义该函数使得 \acode{average()} 可以为 \acode{Cents} 工作。
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+template <typename T>
+T average(const T* myArray, int numValues)
+{
+    T sum { 0 };
+    for (int count { 0 }; count < numValues; ++count)
+        sum += myArray[count];
+
+    sum /= numValues;
+    return sum;
+}
+
+class Cents
+{
+private:
+    int m_cents {};
+public:
+    Cents(int cents)
+        : m_cents { cents }
+    {
+    }
+
+    friend std::ostream& operator<< (std::ostream& out, const Cents& cents)
+    {
+        out << cents.m_cents << " cents ";
+        return out;
+    }
+
+    Cents& operator+= (const Cents &cents)
+    {
+        m_cents += cents.m_cents;
+        return *this;
+    }
+
+    Cents& operator/= (int x)
+    {
+        m_cents /= x;
+        return *this;
+    }
+};
+
+int main()
+{
+    Cents centsArray[] { Cents { 5 }, Cents { 10 }, Cents { 15 }, Cents { 14 } };
+    std::cout << average(centsArray, 4) << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+最终代码通过编译并运行！打印结果：
+
+\begin{lstlisting}
+11 cents
+\end{lstlisting}
+
+注意我们并未修改 \acode{average()} 使其对类型 \acode{Cents} 生效。我们仅定义了操作符为 \acode{Cents} 类实现 \acode{average()}，
+编译器为我们做了剩下的事情！
+
+\end{document}

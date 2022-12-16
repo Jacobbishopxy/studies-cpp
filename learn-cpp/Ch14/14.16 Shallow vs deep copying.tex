@@ -1,0 +1,286 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{16}{Shallow vs deep copying}
+
+\subsubsection*{浅拷贝}
+
+由于 C++ 并不熟悉用户的类，其所提供的默认拷贝构造函数与赋值操作符使用的拷贝方法是成员向的拷贝（同样也被称为\textbf{浅拷贝} shallow copy）。
+这就意味着 C++ 分别拷贝每个成员对象（使用重载的赋值操作符=，以及拷贝构造函数的直接初始化）。当类很简单（例如没有包含任何动态内存分配）时，
+这样做没有任何问题。
+
+例如再来看一下 Fraction 的例子：
+
+\begin{lstlisting}[language=C++]
+#include <cassert>
+#include <iostream>
+
+class Fraction
+{
+private:
+    int m_numerator { 0 };
+    int m_denominator { 1 };
+
+public:
+    // 默认构造函数
+    Fraction(int numerator = 0, int denominator = 1)
+        : m_numerator{ numerator }
+        , m_denominator{ denominator }
+    {
+        assert(denominator != 0);
+    }
+
+    friend std::ostream& operator<<(std::ostream& out, const Fraction& f1);
+};
+
+std::ostream& operator<<(std::ostream& out, const Fraction& f1)
+{
+	out << f1.m_numerator << '/' << f1.m_denominator;
+	return out;
+}
+\end{lstlisting}
+
+由编译器为该类提供的默认拷贝构造函数与默认赋值操作符如下：
+
+\begin{lstlisting}[language=C++]
+#include <cassert>
+#include <iostream>
+
+class Fraction
+{
+private:
+    int m_numerator { 0 };
+    int m_denominator { 1 };
+
+public:
+    // 默认构造函数
+    Fraction(int numerator = 0, int denominator = 1)
+        : m_numerator{ numerator }
+        , m_denominator{ denominator }
+    {
+        assert(denominator != 0);
+    }
+
+    // 隐式拷贝构造函数可能的实现
+    Fraction(const Fraction& f)
+        : m_numerator{ f.m_numerator }
+        , m_denominator{ f.m_denominator }
+    {
+    }
+
+    // 隐式赋值操作符可能的实现
+    Fraction& operator= (const Fraction& fraction)
+    {
+        // 自赋值保护
+        if (this == &fraction)
+            return *this;
+
+        // 进行拷贝
+        m_numerator = fraction.m_numerator;
+        m_denominator = fraction.m_denominator;
+
+        // 返回已有对象使得可以串联该操作符
+        return *this;
+    }
+
+    friend std::ostream& operator<<(std::ostream& out, const Fraction& f1)
+    {
+        out << f1.m_numerator << '/' << f1.m_denominator;
+        return out;
+    }
+};
+\end{lstlisting}
+
+注意因为这些默认版本的对于该类而言恰好有效，因此这种情况下并没有理由去创造一个自定义的版本。
+
+然而当设计的类处理动态分配内存时，成员向（浅）的拷贝则会带来大量的麻烦！这是因为浅拷贝指针仅拷贝了指针的地址 --
+它并没有分配任何内存或是拷贝指向的内容！
+
+下面来看一个例子：
+
+\begin{lstlisting}[language=C++]
+#include <cstring> // for strlen()
+#include <cassert> // for assert()
+
+class MyString
+{
+private:
+    char* m_data{};
+    int m_length{};
+
+public:
+    MyString(const char* source = "" )
+    {
+        assert(source); // 确保 source 并非为空字符串
+
+        // 找到字符串的长度
+        // 加一作为终结符
+        m_length = std::strlen(source) + 1;
+
+        // 分配一个等长的缓存
+        m_data = new char[m_length];
+
+        // 拷贝参数字符串至内部的缓存
+        for (int i{ 0 }; i < m_length; ++i)
+            m_data[i] = source[i];
+    }
+
+    ~MyString() // 析构函数
+    {
+        // 需要释放字符串
+        delete[] m_data;
+    }
+
+    char* getString() { return m_data; }
+    int getLength() { return m_length; }
+};
+\end{lstlisting}
+
+上述简单字符串类分配内存用于存储一个传入的字符串。注意暂未定义拷贝构造函数或是重载赋值操作符。
+因此 C++ 将提供进行浅拷贝的默认拷贝构造函数以及默认赋值操作符。拷贝构造函数类似于：
+
+\begin{lstlisting}[language=C++]
+MyString::MyString(const MyString& source)
+    : m_length { source.m_length }
+    , m_data { source.m_data }
+{
+}
+\end{lstlisting}
+
+注意 m\_data 是一个对于 source.m\_data 的浅指针拷贝，意味着它们同时指向同一个地址。
+
+现在考虑以下代码：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+int main()
+{
+    MyString hello{ "Hello, world!" };
+    {
+        MyString copy{ hello }; // 使用默认拷贝构造函数
+    } // copy 是一个本地变量，所以在此被销毁。析构函数删除 copy 的字符串，即留下一个悬垂指针
+
+    std::cout << hello.getString() << '\n'; // 这将带来未定义行为
+
+    return 0;
+}
+\end{lstlisting}
+
+虽然这段代码看起来无害，但是它包含了一个阴险的问题那就是导致程序出现未定义行为！
+
+让我们逐行拆分该例子：
+
+\begin{lstlisting}
+MyString hello{ "Hello, world!" };
+\end{lstlisting}
+
+本行无害。其调用了 MyString 构造函数，分配一些内存，设置 \acode{hello.m_data} 使其指向它，接着拷贝字符串“Hello, world!”给它。
+
+\begin{lstlisting}
+MyString copy{ hello }; // 使用默认拷贝构造函数
+\end{lstlisting}
+
+本行看起来也无害，但是这实际上是问题的来源！本行被解析时，C++ 将使用默认的拷贝构造函数（因为用户没有提供）。
+该拷贝构造函数将做一个浅拷贝，初始化 \acode{copy.m_data} 与 \acode{hello.m_data} 同样的地址。
+因此，\acode{copy.m_data} 与 \acode{hello.m_data} 指向了同样的内存！
+
+\begin{lstlisting}
+} // copy 在此被销毁
+\end{lstlisting}
+
+当 copy 离开作用域，MyString 析构函数在 copy 上被调用。析构函数删除了动态分配的内存，即 \acode{copy.m_data} 与 \acode{hello.m_data} 同时指向的内存！
+因此，删除了 copy，同样也（不经意的）影响了 hello。变量 copy 被销毁，但是 \acode{hello.m_data} 仍然指向被删除（无效）的内存！
+
+\begin{lstlisting}
+std::cout << hello.getString() << '\n'; // 这将导致未定义行为
+\end{lstlisting}
+
+现在可以理解为什么程序有未定义行为了。我们删除了 hello 指向的字符串，并尝试打印已经不存在的内存上的值。
+
+这个问题的源头在于拷贝构造函数所做的浅拷贝 -- 在拷贝构造函数或是重载赋值操作符中浅拷贝指针的值几乎就是在自找麻烦。
+
+\subsubsection*{深拷贝}
+
+该问题的一个解决方案是对于任何非空指针进行深拷贝。\textbf{深拷贝} deep copy 为拷贝分配内存并拷贝真实的值，这样拷贝存活于独立的内存中。
+以这样的方式，拷贝与源是独立的且不会互相影响。深拷贝需要用户编写自定义的拷贝构造函数以及重载赋值操作符。
+
+\begin{lstlisting}[language=C++]
+// 假设 m_data 已被初始化
+void MyString::deepCopy(const MyString& source)
+{
+    // 首先需要释放该字符串所存储的任何值！
+    delete[] m_data;
+
+    // 因为 m_length 不是一个指针，我们可以浅拷贝它
+    m_length = source.m_length;
+
+    // m_data 是一个指针，所以它非空时需要深拷贝它
+    if (source.m_data)
+    {
+        // 为拷贝分配内存
+        m_data = new char[m_length];
+
+        // 进行拷贝
+        for (int i{ 0 }; i < m_length; ++i)
+            m_data[i] = source.m_data[i];
+    }
+    else
+        m_data = nullptr;
+}
+
+// 拷贝构造函数
+MyString::MyString(const MyString& source)
+{
+    deepCopy(source);
+}
+\end{lstlisting}
+
+如所见这比浅拷贝涉及的内容更多！首先，需要确保源拥有字符串（行 11）。如果有则分配足够的内存用于存储字符串的拷贝（行 14）。
+最后需要手动的拷贝字符串（行 17 与 18）。
+
+现在进行重载赋值操作符，它会有一点狡猾：
+
+\begin{lstlisting}[language=C++]
+// 赋值操作符
+MyString& MyString::operator=(const MyString& source)
+{
+    // 检查是否自赋值
+    if (this != &source)
+    {
+        // 现在进行深拷贝
+        deepCopy(source);
+    }
+
+    return *this;
+}
+\end{lstlisting}
+
+注意赋值操作符与拷贝构造函数类似，但是有三个主要的不同点：
+
+\begin{itemize}
+  \item 添加了一个自赋值检测
+  \item 返回 *this 使得可以串联赋值操作符
+  \item 需要显式的释放任何其存储的字符串（当 m\_data 之后被释放时，不会有内存泄漏）。这步在 \acode{deepCopy()} 中完成。
+\end{itemize}
+
+当重载赋值操作符被调用，被赋值的想有可能已包含了之前的值，我们需要确保在赋与新值内存之前清理它。对于非动态分配的变量（即固定大小）而言，
+我们不需要担心是因为新值将会覆盖旧值。然而对于动态分配的变量而言，我们需要在分配任何新内存之前，显式的释放所有的旧内存。如果不这么做，
+代码虽然不会崩溃，但是会带来内存泄漏，随即在每次进行分配时吃掉空闲内存。
+
+\subsubsection*{一个更好的解决方案}
+
+标准库的类处理动态内存，例如 \acode{std::string} 以及 \acode{std::vector}，处理了它们所有的内存管理，
+并且重载了拷贝构造函数与赋值操作符使得拥有合理的深拷贝。因此相较于自定义的内存管理，用户使用它们初始化或复制时便可以像普通的基础变量那样！
+这使得类简单易用，减少了出错，也不需要用户花费时间在自定义的重载函数上！
+
+\subsubsection*{总结}
+
+\begin{itemize}
+  \item 默认拷贝构造函数以及默认赋值操作符皆为浅拷贝，对于不含动态分配变量的类而言是可行的。
+  \item 拥有动态分配变量的类的拷贝构造函数以及赋值操作符必须要进行深拷贝。
+  \item 优先考虑使用标准库所提供的类而不是用户手动进行内存管理。
+\end{itemize}
+
+\end{document}
