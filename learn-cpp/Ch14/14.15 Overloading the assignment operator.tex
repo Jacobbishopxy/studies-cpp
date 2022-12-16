@@ -1,0 +1,334 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{15}{Overloading the assignment operator}
+
+\textbf{赋值操作符} assignment operator（操作符=）用于从一个对象拷贝值至另一个\textit{已存在的对象}。
+
+\subsubsection*{赋值 vs 拷贝构造函数}
+
+拷贝构造函数以及赋值操作符的目的几乎相等 -- 都是拷贝一个对象至另一个对象。然而拷贝构造函数初始化新对象，而赋值操作符替换已有对象的内容。
+
+它们之间的差异会让很多新手程序员产生疑惑，不过并没有那么的难。总结一下：
+
+\begin{itemize}
+  \item 如果一个新对象必须在拷贝出现之前被创建，那么使用拷贝构造函数（注：这包含了值传递与返回对象）。
+  \item 如果一个新对象不需要在拷贝前被创建，使用赋值操作符。
+\end{itemize}
+
+\subsubsection*{重载赋值操作符}
+
+重载赋值操作符（操作符=）非常的直观，仅需要一个特定条款就可以实现。赋值操作符必须重载为成员函数。
+
+\begin{lstlisting}[language=C++]
+#include <cassert>
+#include <iostream>
+
+class Fraction
+{
+private:
+  int m_numerator { 0 };
+  int m_denominator { 1 };
+
+public:
+  // 默认构造函数
+  Fraction(int numerator = 0, int denominator = 1 )
+    : m_numerator { numerator }, m_denominator { denominator }
+  {
+    assert(denominator != 0);
+  }
+
+  // 拷贝构造函数
+  Fraction(const Fraction& copy)
+    : m_numerator { copy.m_numerator }, m_denominator { copy.m_denominator }
+  {
+    // 这里不需要检查分母是否为 0，因为 fraction 必须是已有的合法 Fraction
+    std::cout << "Copy constructor called\n"; // 仅用于证明其有效
+  }
+
+  // 重载赋值操作符
+  Fraction& operator= (const Fraction& fraction);
+
+  friend std::ostream& operator<<(std::ostream& out, const Fraction& f1);
+
+};
+
+std::ostream& operator<<(std::ostream& out, const Fraction& f1)
+{
+  out << f1.m_numerator << '/' << f1.m_denominator;
+  return out;
+}
+
+// 一个简单的实现（更好的实现详见后面）
+Fraction& Fraction::operator= (const Fraction& fraction)
+{
+    // 进行拷贝
+    m_numerator = fraction.m_numerator;
+    m_denominator = fraction.m_denominator;
+
+    // 返回已有对象使得可以串联该操作符
+    return *this;
+}
+
+int main()
+{
+    Fraction fiveThirds { 5, 3 };
+    Fraction f;
+    f = fiveThirds; // 调用重载赋值
+    std::cout << f;
+
+    return 0;
+}
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+5/3
+\end{lstlisting}
+
+现在来看非常的直观，重载操作符= 返回 *this 使得若干赋值可以被串联起来：
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    Fraction f1 { 5, 3 };
+    Fraction f2 { 7, 2 };
+    Fraction f3 { 9, 5 };
+
+    f1 = f2 = f3; // 串联赋值
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{自赋值 self-assignment 的问题}
+
+从这里开始事情变得有趣了起来。C++ 允许自赋值：
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    Fraction f1 { 5, 3 };
+    f1 = f1; // self assignment
+
+    return 0;
+}
+\end{lstlisting}
+
+这将调用 \acode{f1.operator=(f1)}，在上述的简单实现下所有的成员都会被赋值。这个特定的例子中，自赋值导致每个成员都被赋予其自身，
+没有整体的影响，除了浪费了时间。大多数情况下，自赋值并不需要做任何事情！
+
+然而在赋值操作符需要动态分配内存时，自赋值将会变得很危险：
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+class MyString
+{
+private:
+	char* m_data {};
+	int m_length {};
+
+public:
+	MyString(const char* data = nullptr, int length = 0 )
+		: m_length { length }
+	{
+		if (length)
+		{
+			m_data = new char[length];
+
+			for (int i { 0 }; i < length; ++i)
+				m_data[i] = data[i];
+		}
+	}
+	~MyString()
+	{
+		delete[] m_data;
+	}
+
+  // 重载赋值
+	MyString& operator= (const MyString& str);
+
+	friend std::ostream& operator<<(std::ostream& out, const MyString& s);
+};
+
+std::ostream& operator<<(std::ostream& out, const MyString& s)
+{
+	out << s.m_data;
+	return out;
+}
+
+// 一个简单的操作符= 的实现（不要使用）
+MyString& MyString::operator= (const MyString& str)
+{
+  // 如果当前字符串有数据存在，删除它
+	if (m_data) delete[] m_data;
+
+	m_length = str.m_length;
+
+  // 从 str 中拷贝数据至隐式对象
+	m_data = new char[str.m_length];
+
+	for (int i { 0 }; i < str.m_length; ++i)
+		m_data[i] = str.m_data[i];
+
+  // 返回现有的对象使其可被串联
+	return *this;
+}
+
+int main()
+{
+	MyString alex("Alex", 5); // 遇到 Alex
+	MyString employee;
+	employee = alex; // Alex 是最新的雇员
+	std::cout << employee; // 雇员，念出你的名字
+
+	return 0;
+}
+\end{lstlisting}
+
+首先运行上述程序将会看到打印“Alex”。现在运行以下：
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    MyString alex { "Alex", 5 }; // 遇到 Alex
+    alex = alex; // Alex 是他自己
+    std::cout << alex; // Alex，念出你的名字
+
+    return 0;
+}
+\end{lstlisting}
+
+很大概率会获得垃圾输出。这是怎么回事？
+
+思考当隐式对象以及传递给参数（str）都是变量 alex 的情况下，重载操作符= 发生了什么。本例中 \acode{m_data} 与 \acode{str.m_data} 一样。
+首先发生的是函数检查隐式对象是否已经有一个字符串。如果有，它需要删除，这样不会有内存泄漏。本例 \acode{m_data} 被分配了，所以函数删除了 \acode{m_data}。
+但是因为 str 与 *this 相同，我们希望拷贝的字符串已经被删除了，所以 \acode{m_data}（以及 \acode{str.m_data}）变为悬垂。
+
+之后又分配了新的内存给 \acode{m_data}（以及 \acode{str.m_data}）。因此结果就是从 \acode{str.m_data} 拷贝进 \acode{m_data}，也就是拷贝了垃圾。
+
+\subsubsection*{检测并处理自赋值}
+
+幸运的是我们可以坚持自赋值何时发生。以下是一个更新后的重载操作符= 的实现：
+
+\begin{lstlisting}[language=C++]
+MyString& MyString::operator= (const MyString& str)
+{
+  // 自赋值检测
+  if (this == &str)
+    return *this;
+
+  // 如果当前字符串有数据存在，删除它
+  if (m_data) delete[] m_data;
+
+  m_length = str.m_length;
+
+  // 从 str 中拷贝数据至隐式对象
+  m_data = new char[str.m_length];
+
+  for (int i { 0 }; i < str.m_length; ++i)
+    m_data[i] = str.m_data[i];
+
+  // 返回现有的对象使其可被串联
+  return *this;
+}
+\end{lstlisting}
+
+通过检测因素对象的地址是否与传入对象的地址一致，可以让复制操作符立刻返回而不需要做额外的工作。
+
+由于这是一个指针比较，它应该非常的快，且不需要操作符== 被重载。
+
+\subsubsection*{何时不去处理自赋值}
+
+通常自赋值检测在拷贝构造函数时跳过。因为被拷贝构造的对象是新建的，仅在新建的对象可以等于被拷贝的对象时是当尝试通过自身来初始化一个新定义的对象：
+
+\begin{lstlisting}[language=C++]
+someClass c { c };
+\end{lstlisting}
+
+这种情况下，编译器会警告 \acode{c} 是一个未初始化的变量。
+
+其次，在类可以自然处理自赋值的时候，自赋值检查可能被省略。考虑 Fraction 类赋值操作符有一个自赋值保障：
+
+\begin{lstlisting}[language=C++]
+// 一个更好的操作符= 实现
+Fraction& Fraction::operator= (const Fraction& fraction)
+{
+    // 自赋值保护
+    if (this == &fraction)
+        return *this;
+
+    // 进行拷贝
+    m_numerator = fraction.m_numerator; // 可处理自赋值
+    m_denominator = fraction.m_denominator; // 可处理自赋值
+
+    // 返回已有对象使得可以串联该操作符
+    return *this;
+}
+\end{lstlisting}
+
+如果自赋值保护不存在，该函数将仍然在自赋值时进行正确操作（因为所有由函数完成的操作可以正确的处理自赋值）。
+
+由于自赋值很罕见，一些著名的 C++ 专家建议省略自赋值保护，即使在类中可以获得好处。
+这里不建议这么做，因为我们相信代码防护是更好的实践，其次才是可选的优化。
+
+\subsubsection*{拷贝与交换方言}
+
+一个处理自赋值问题更好的方法是通过拷贝与交换方言。详情请见 \href{https://stackoverflow.com/questions/3279543/what-is-the-copy-and-swap-idiom}{Stack Overflow}。
+
+\subsubsection*{默认赋值操作符}
+
+不同于其他操作符，编译器在用户没有提供自定义的复制操作符情况下，会提供默认的公有复制操作符。
+该赋值操作符会进行成员向的复制（即等效于成员向的默认拷贝构造函数的初始化）。
+
+与其他构造函数和操作符一样，可以通过私有化复制操作符或者 delete 关键字来阻止赋值：
+
+\begin{lstlisting}[language=C++]
+#include <cassert>
+#include <iostream>
+
+class Fraction
+{
+private:
+	int m_numerator { 0 };
+	int m_denominator { 1 };
+
+public:
+    // 默认构造函数
+    Fraction(int numerator = 0, int denominator = 1)
+        : m_numerator { numerator }, m_denominator { denominator }
+    {
+        assert(denominator != 0);
+    }
+
+	// 拷贝构造函数
+	Fraction(const Fraction &copy) = delete;
+
+	// 重载赋值
+	Fraction& operator= (const Fraction& fraction) = delete; // 通过赋值没有拷贝！
+
+	friend std::ostream& operator<<(std::ostream& out, const Fraction& f1);
+
+};
+
+std::ostream& operator<<(std::ostream& out, const Fraction& f1)
+{
+	out << f1.m_numerator << '/' << f1.m_denominator;
+	return out;
+}
+
+int main()
+{
+    Fraction fiveThirds { 5, 3 };
+    Fraction f;
+    f = fiveThirds; // 编译错误，操作符= 被删除了
+    std::cout << f;
+
+    return 0;
+}
+\end{lstlisting}
+
+\end{document}

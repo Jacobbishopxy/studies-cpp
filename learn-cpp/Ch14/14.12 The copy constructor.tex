@@ -142,7 +142,7 @@ public:
         // 注意：我们可以直接访问参数 fraction 的成员，因为处在 Fraction 类内部
     {
         // 这里不需要检查分母是否为 0，因为 fraction 必须是已有的合法 Fraction
-        std::cout << "Copy constructor called\n"; // just to prove it works
+        std::cout << "Copy constructor called\n"; // 仅用于证明其有效
     }
 
     friend std::ostream& operator<<(std::ostream& out, const Fraction& f1);
@@ -194,11 +194,11 @@ private:
         : m_numerator{fraction.m_numerator}, m_denominator{fraction.m_denominator}
     {
         // 这里不需要检查分母是否为 0，因为 fraction 必须是已有的合法 Fraction
-        std::cout << "Copy constructor called\n"; // just to prove it works
+        std::cout << "Copy constructor called\n"; // 仅用于证明其有效
     }
 
 public:
-    // Default constructor
+    // 拷贝构造函数
     Fraction(int numerator=0, int denominator=1)
         : m_numerator{numerator}, m_denominator{denominator}
     {
@@ -237,18 +237,18 @@ private:
 	int m_denominator{};
 
 public:
-  // 默认构造函数
-  Fraction(int numerator=0, int denominator=1)
-      : m_numerator{numerator}, m_denominator{denominator}
-  {
-      assert(denominator != 0);
-  }
+    // 默认构造函数
+    Fraction(int numerator=0, int denominator=1)
+        : m_numerator{numerator}, m_denominator{denominator}
+    {
+        assert(denominator != 0);
+    }
 
   // 拷贝构造函数
 	Fraction(const Fraction &fraction)
 		: m_numerator{fraction.m_numerator}, m_denominator{fraction.m_denominator}
 	{
-		std::cout << "Copy constructor called\n"; // just to prove it works
+		std::cout << "Copy constructor called\n"; // 仅用于证明其有效
 	}
 
 	friend std::ostream& operator<<(std::ostream& out, const Fraction& f1);
