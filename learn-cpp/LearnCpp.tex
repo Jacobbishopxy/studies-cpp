@@ -33,24 +33,7 @@
 \usepackage{./style}
 \lstset{style=lcpp}
 
-% a new command which severs arbitrary section number
-\newcommand{\asection}[2]{
-  \setcounter{section}{#1}
-  \addtocounter{section}{-1}
-  \section{#2}
-}
-
-% a new command which severs arbitrary subsection number
-\newcommand{\asubsection}[2]{
-  \setcounter{subsection}{#1}
-  \addtocounter{subsection}{-1}
-  \subsection{#2}
-}
-
-% a new command which simplify \lstinline
-\newcommand{\acode}[1]{
-  \lstinline[basicstyle=\ttfamily]{#1}
-}
+\input{commands.tex}
 
 \begin{document}
 
@@ -334,6 +317,9 @@
 \newpage
 
 \section{Input and Output (I/O)}
+
+\subfile{Ch23/23.1 Input and output (IO) streams}
+% \subfile{Ch23/}
 
 \newpage
 
