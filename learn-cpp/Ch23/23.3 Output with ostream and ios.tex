@@ -1,0 +1,640 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{3}{Output with ostream and ios}
+
+这一节将学习 iostream 输出类（ostream）的各个方面。
+
+\subsubsection*{插入操作符}
+
+插入操作符（<<）用于输入信息进入输出流中。C++ 为所有内建的数据类型预定义的插入操作，我们已经见到了是如何为自定义的类重载插入操作符的。
+
+在 streams 小节中我们见到了 istream 与 ostream 被一个称为 ios 的类派生。ios（以及 ios\_base）其中的一个职能就是控制输出的格式选项。
+
+\subsubsection*{格式化}
+
+有两种方法用于修改格式化选项：flags 以及 manipulators。可以将 \textbf{flags} 视为布尔变量，即可开关；
+\textbf{manipulators} 则是对象用于放置在流中，影响输入与输出。
+
+开启 flag 可以使用 \textbf{setf()} 函数，以及正确的 flag 作为参数。例如 C++ 默认不会打印 + 号在正数前。
+然而使用 \acode{std::ios::showops} flag 可以修改这个行为：
+
+\begin{lstlisting}[language=C++]
+std::cout.setf(std::ios::showpos); // turn on the std::ios::showpos flag
+std::cout << 27 << '\n';
+\end{lstlisting}
+
+输出：
+
+\begin{lstlisting}
++27
+\end{lstlisting}
+
+使用 Bitwise OR（|）操作符也可以同时开启若干 ios flags：
+
+\begin{lstlisting}[language=C++]
+std::cout.setf(std::ios::showpos | std::ios::uppercase); // turn on the std::ios::showpos and std::ios::uppercase flag
+std::cout << 1234567.89f << '\n';
+\end{lstlisting}
+
+输出：
+
+\begin{lstlisting}
++1.23457E+06
+\end{lstlisting}
+
+关闭 flag 可以使用 \textbf{unsetf()} 函数：
+
+\begin{lstlisting}
+std::cout.setf(std::ios::showpos); // turn on the std::ios::showpos flag
+std::cout << 27 << '\n';
+std::cout.unsetf(std::ios::showpos); // turn off the std::ios::showpos flag
+std::cout << 28 << '\n';
+\end{lstlisting}
+
+输出：
+
+\begin{lstlisting}[language=C++]
++27
+28
+\end{lstlisting}
+
+在使用 \acode{setf()} 时有一个棘手地方需要注意。很多 flags 属于的组被称为格式组。\textbf{格式组} format group 是一组 flags 用于执行相似（有时为互斥）的格式选项。
+例如一个名为 “basefield” 的格式组包含了 “oct”，“dec” 以及 “hex” 用于控制整数值。默认为 “dec” flag。因此，如果这样：
+
+\begin{lstlisting}[language=C++]
+std::cout.setf(std::ios::hex); // try to turn on hex output
+std::cout << 27 << '\n';
+\end{lstlisting}
+
+会得到以下输出：
+
+\begin{lstlisting}[language=C++]
+27
+\end{lstlisting}
+
+它并没有生效！原因是因为 \acode{setf()} 仅只是开启了 -- 它并没有智能到将互斥的 flags 关闭。因此，当开启 \acode{std::hex} 时，
+\acode{std::ios::dec} 仍然是开启的，而明显 \acode{std::ios::dec} 的优先级更高。有两种办法来解决这个问题。
+
+首先可以关闭 \acode{std::ios::dec} 使得 \acode{std::hex} 生效。
+
+\begin{lstlisting}[language=C++]
+std::cout.unsetf(std::ios::dec); // turn off decimal output
+std::cout.setf(std::ios::hex); // turn on hexadecimal output
+std::cout << 27 << '\n';
+\end{lstlisting}
+
+得到预期的输出：
+
+\begin{lstlisting}
+1b
+\end{lstlisting}
+
+第二种方法就是使用另一种形式的 \acode{setf()} 接受两个参数：第一个参数是用于设置的 flag，第二个是其所属的格式组。
+当使用这种形式的 \acode{setf()}，所有属于该组的 flag 都会关闭，并仅留下传递进的 flag 开启。
+
+\begin{lstlisting}[language=C++]
+// Turn on std::ios::hex as the only std::ios::basefield flag
+std::cout.setf(std::ios::hex, std::ios::basefield);
+std::cout << 27 << '\n';
+\end{lstlisting}
+
+这也可以得到预期的输出：
+
+\begin{lstlisting}
+1b
+\end{lstlisting}
+
+使用 \acode{setf()} 与 \acode{unsetf()} 往往很尴尬，因此 C++ 提供了另一种方法来修改格式选项：manipulators。
+manipulators 的好处是它们足够的聪明来开启与关闭合适的 flags。
+
+\begin{lstlisting}[language=C++]
+std::cout << std::hex << 27 << '\n'; // print 27 in hex
+std::cout << 28 << '\n'; // we're still in hex
+std::cout << std::dec << 29 << '\n'; // back to decimal
+\end{lstlisting}
+
+输出：
+
+\begin{lstlisting}[language=C++]
+1b
+1c
+29
+\end{lstlisting}
+
+通常来说，使用 manipulators 比起设置 flags 而言简单了很多。很多选项都可以通过 flags 与 manipulators 设置（例如修改 base），
+然而其他选项仅能通过 flags 或是 manipulators，因此如何使用它们两者是很重要的。
+
+\subsubsection*{有用的格式化}
+
+以下列举了一些更有用的 flags 与 manipulators 以及成员函数。flags 存在于 \acode{std::ios} 类中，manipulators 存在于 \acode{std} 命名空间中，
+成员函数存在于 \acode{std::ostream} 类中。
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Group & Flag                & Meaning                                                                     \\
+      \hline
+            & std::ios::boolalpha & If set, booleans print “true” or “false”. If not set, booleans print 0 or 1 \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Manipulator      & Meaning                           \\
+      \hline
+      std::boolalpha   & Booleans print “true” or “false”  \\
+      std::noboolalpha & Booleans print 0 or 1 \(default\) \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+例子：
+
+\begin{lstlisting}[language=C++]
+std::cout << true << ' ' << false << '\n';
+
+std::cout.setf(std::ios::boolalpha);
+std::cout << true << ' ' << false << '\n';
+
+std::cout << std::noboolalpha << true << ' ' << false << '\n';
+
+std::cout << std::boolalpha << true << ' ' << false << '\n';
+\end{lstlisting}
+
+结果：
+
+\begin{lstlisting}
+1 0
+true false
+1 0
+true false
+\end{lstlisting}
+
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Group & Flag              & Meaning                                  \\
+      \hline
+            & std::ios::showpos & If set, prefix positive numbers with a + \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Manipulator    & Meaning                                  \\
+      \hline
+      std::showpos   & Prefixes positive numbers with a +       \\
+      std::noshowpos & Doesn’t prefix positive numbers with a + \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+例子：
+
+\begin{lstlisting}[language=C++]
+std::cout << 5 << '\n';
+
+std::cout.setf(std::ios::showpos);
+std::cout << 5 << '\n';
+
+std::cout << std::noshowpos << 5 << '\n';
+
+std::cout << std::showpos << 5 << '\n';
+\end{lstlisting}
+
+输出：
+
+\begin{lstlisting}
+5
++5
+5
++5
+\end{lstlisting}
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Group & Flag                & Meaning                         \\
+      \hline
+            & std::ios::uppercase & If set, uses upper case letters \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Manipulator      & Meaning                 \\
+      \hline
+      std::uppercase   & Uses upper case letters \\
+      std::nouppercase & Uses lower case letters \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+例子：
+
+\begin{lstlisting}[language=C++]
+std::cout << 12345678.9 << '\n';
+
+std::cout.setf(std::ios::uppercase);
+std::cout << 12345678.9 << '\n';
+
+std::cout << std::nouppercase << 12345678.9 << '\n';
+
+std::cout << std::uppercase << 12345678.9 << '\n';
+\end{lstlisting}
+
+结果：
+
+\begin{lstlisting}
+1.23457e+007
+1.23457E+007
+1.23457e+007
+1.23457E+007
+\end{lstlisting}
+
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Group               & Flag          & Meaning                                                \\
+      \
+      std::ios::basefield & std::ios::dec & Prints values in decimal (default)                     \\
+      std::ios::basefield & std::ios::hex & Prints values in hexadecimal                           \\
+      std::ios::basefield & std::ios::oct & Prints values in octal                                 \\
+      std::ios::basefield & (none)        & Prints values according to leading characters of value \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Manipulator & Meaning                      \\
+      \hline
+      std::dec    & Prints values in decimal     \\
+      std::hex    & Prints values in hexadecimal \\
+      std::oct    & Prints values in octal       \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+例子：
+
+\begin{lstlisting}[language=C++]
+std::cout << 27 << '\n';
+
+std::cout.setf(std::ios::dec, std::ios::basefield);
+std::cout << 27 << '\n';
+
+std::cout.setf(std::ios::oct, std::ios::basefield);
+std::cout << 27 << '\n';
+
+std::cout.setf(std::ios::hex, std::ios::basefield);
+std::cout << 27 << '\n';
+
+std::cout << std::dec << 27 << '\n';
+std::cout << std::oct << 27 << '\n';
+std::cout << std::hex << 27 << '\n';
+\end{lstlisting}
+
+结果：
+
+\begin{lstlisting}
+27
+27
+33
+1b
+27
+33
+1b
+\end{lstlisting}
+
+现在我们能够看到通过 flag 与通过 manipulators 设置之间的关系了。之后的例子中我们将使用 manipulators，除非它们不可用。
+
+\subsubsection*{精度，注释，以及小数点}
+
+使用 manipulators（或 flags），能够修改精度以及浮点数展示的格式。有若干格式选线被结合成复杂的方式，让我们深入了解一下。
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Group                & Flag                 & Meaning                                                                \\
+      \hline
+      std::ios::floatfield & std::ios::fixed      & Uses decimal notation for floating-point numbers                       \\
+      std::ios::floatfield & std::ios::scientific & Uses scientific notation for floating-point numbers                    \\
+      std::ios::floatfield & (none)               & Uses fixed for numbers with few digits, scientific otherwise           \\
+      std::ios::floatfield & std::ios::showpoint  & Always show a decimal point and trailing 0’s for floating-point values \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Manipulator       & Meaning                                                                            \\
+      \hline
+      std::fixed        & Use decimal notation for values                                                    \\
+      std::scientific   & Use scientific notation for values                                                 \\
+      std::showpoint    & Show a decimal point and trailing 0’s for floating-point values                    \\
+      std::noshowpoint  & Don’t show a decimal point and trailing 0’s for floating-point values              \\
+      std::setprecision & (int)	Sets the precision of floating-point numbers (defined in the iomanip header) \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Member function                & Meaning                                                                \\
+      \hline
+      std::ios\_base::precision()    & Returns the current precision of floating-point numbers                \\
+      std::ios\_base::precision(int) & Sets the precision of floating-point numbers and returns old precision \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+如果使用了固定的或者科学计数，精度决定小数部分应该展示多少位。注意如果精度小于有效数字的数量，数值将被四舍五入。
+
+\begin{lstlisting}[language=C++]
+std::cout << std::fixed << '\n';
+std::cout << std::setprecision(3) << 123.456 << '\n';
+std::cout << std::setprecision(4) << 123.456 << '\n';
+std::cout << std::setprecision(5) << 123.456 << '\n';
+std::cout << std::setprecision(6) << 123.456 << '\n';
+std::cout << std::setprecision(7) << 123.456 << '\n';
+
+std::cout << std::scientific << '\n';
+std::cout << std::setprecision(3) << 123.456 << '\n';
+std::cout << std::setprecision(4) << 123.456 << '\n';
+std::cout << std::setprecision(5) << 123.456 << '\n';
+std::cout << std::setprecision(6) << 123.456 << '\n';
+std::cout << std::setprecision(7) << 123.456 << '\n';
+\end{lstlisting}
+
+输出：
+
+\begin{lstlisting}
+123.456
+123.4560
+123.45600
+123.456000
+123.4560000
+
+1.235e+002
+1.2346e+002
+1.23456e+002
+1.234560e+002
+1.2345600e+002
+\end{lstlisting}
+
+如果使用的不是固定数或者科学计数，精度决定了应该显式多少个有效数字。同样的，如果精度小于有效数字的数量，数值将被四舍五入。
+
+\begin{lstlisting}[language=C++]
+std::cout << std::setprecision(3) << 123.456 << '\n';
+std::cout << std::setprecision(4) << 123.456 << '\n';
+std::cout << std::setprecision(5) << 123.456 << '\n';
+std::cout << std::setprecision(6) << 123.456 << '\n';
+std::cout << std::setprecision(7) << 123.456 << '\n';
+\end{lstlisting}
+
+输出：
+
+\begin{lstlisting}
+123
+123.5
+123.46
+123.456
+123.456
+\end{lstlisting}
+
+使用 showpoint manipulator 或者 flag，可以使流写下小数点以及尾随零。
+
+\begin{lstlisting}[language=C++]
+std::cout << std::showpoint << '\n';
+std::cout << std::setprecision(3) << 123.456 << '\n';
+std::cout << std::setprecision(4) << 123.456 << '\n';
+std::cout << std::setprecision(5) << 123.456 << '\n';
+std::cout << std::setprecision(6) << 123.456 << '\n';
+std::cout << std::setprecision(7) << 123.456 << '\n';
+\end{lstlisting}
+
+输出：
+
+\begin{lstlisting}
+123.
+123.5
+123.46
+123.456
+123.4560
+\end{lstlisting}
+
+以下是一个总结：
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Option                        & Precision & 12345.0       & 0.12345       \\
+      \hline
+      \multirow{4}{5em}{Normal}     & 3         & 1.23e+004     & 0.123         \\
+                                    & 4         & 1.235e+004    & 0.1235        \\
+                                    & 5         & 12345         & 0.12345       \\
+                                    & 6         & 12345         & 0.12345       \\
+      \multirow{4}{5em}{Showpoint}  & 3         & 1.23e+004     & 0.123         \\
+                                    & 4         & 1.235e+004    & 0.1235        \\
+                                    & 5         & 12345.        & 0.12345       \\
+                                    & 6         & 12345.0       & 0.123450      \\
+      \multirow{4}{5em}{Fixed}      & 3         & 12345.000     & 0.123         \\
+                                    & 4         & 12345.0000    & 0.1235        \\
+                                    & 5         & 12345.00000   & 0.12345       \\
+                                    & 6         & 12345.000000  & 0.123450      \\
+      \multirow{4}{5em}{Scientific} & 3         & 1.235e+004    & 1.235e-001    \\
+                                    & 4         & 1.2345e+004   & 1.2345e-001   \\
+                                    & 5         & 1.23450e+004  & 1.23450e-001  \\
+                                    & 6         & 1.234500e+004 & 1.234500e-001 \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+\subsubsection*{长度，填充字符，以及校正}
+
+通常在打印数值时，数值边上是不会有任何空格的。然而可以在左侧或右侧校正打印。要这么做需要首先定义字段 width，即为即将输出的值定义输出空间。
+如果实际打印的数值小于字段 width，那么其将被校正居左或居右；如果实际数值大于字段 width，它会被切断 -- 它将溢出字段。
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Group                 & Flag               & Meaning                                                              \\
+      \hline
+      std::ios::adjustfield & std::ios::internal & Left-justifies the sign of the number, and right-justifies the value \\
+      std::ios::adjustfield & std::ios::left     & Left-justifies the sign and value                                    \\
+      std::ios::adjustfield & std::ios::right    & Right-justifies the sign and value (default)                         \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Manipulator        & Meaning                                                                                    \\
+      \hline
+      std::internal      & Left-justifies the sign of the number, and right-justifies the value                       \\
+      std::left          & Left-justifies the sign and value                                                          \\
+      std::right         & Right-justifies the sign and value                                                         \\
+      std::setfill(char) & Sets the parameter as the fill character (defined in the iomanip header)                   \\
+      std::setw(int)     & Sets the field width for input and output to the parameter (defined in the iomanip header) \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Member function                 & Meaning                                                    \\
+      \hline
+      std::basic\_ostream::fill()     & Returns the current fill character                         \\
+      std::basic\_ostream::fill(char) & Sets the fill character and returns the old fill character \\
+      std::ios\_base::width()         & Returns the current field width                            \\
+      std::ios\_base::width(int)      & Sets the current field width and returns old field width   \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+为了使用以上这些格式化，首先需要设置字段 width。这可以通过 \acode{width(int)} 成员函数实现，或者 \acode{setw()} manipulator。
+注意居右是默认的。
+
+\begin{lstlisting}[language=C++]
+std::cout << -12345 << '\n'; // print default value with no field width
+std::cout << std::setw(10) << -12345 << '\n'; // print default with field width
+std::cout << std::setw(10) << std::left << -12345 << '\n'; // print left justified
+std::cout << std::setw(10) << std::right << -12345 << '\n'; // print right justified
+std::cout << std::setw(10) << std::internal << -12345 << '\n'; // print internally justified
+\end{lstlisting}
+
+结果：
+
+\begin{lstlisting}
+-12345
+    -12345
+-12345
+    -12345
+-    12345
+\end{lstlisting}
+
+还有一件值得注意的是 \acode{width(int)} 与 \acode{setw()} 只会影响下一次输出声明。它们不像是其它 flags/manipulators 那样持久性质的。
+
+现在来看看填充字符的例子：
+
+\begin{lstlisting}[language=C++]
+std::cout.fill('*');
+std::cout << -12345 << '\n'; // print default value with no field width
+std::cout << std::setw(10) << -12345 << '\n'; // print default with field width
+std::cout << std::setw(10) << std::left << -12345 << '\n'; // print left justified
+std::cout << std::setw(10) << std::right << -12345 << '\n'; // print right justified
+std::cout << std::setw(10) << std::internal << -12345 << '\n'; // print internally justified
+\end{lstlisting}
+
+输出：
+
+\begin{lstlisting}
+-12345
+****-12345
+-12345****
+****-12345
+-****12345
+\end{lstlisting}
+
+注意所有的空格都被填充上了填充字符。
+
+\end{document}
