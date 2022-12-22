@@ -1,0 +1,210 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{2}{Input with istream}
+
+iostream 库相当的复杂 -- 因此我们不能在此教程中做到完全覆盖。然而我们会展示最常见的功能。本节将深入不同角度的输入类（istream）。
+
+\subsubsection*{提取操作符}
+
+在之前的很多章节已经见到过了，我们可以使用提取操作符（>>）来入去输入流中的信息。C++ 已经为所有内建数据类型预定义了提取操作符，
+其中我们也学习了如何为用户自定义的类进行重载提取操作符。
+
+当读取字符串时，提取操作符中的一个最常见的问题就是如何避免输入超出缓存。例如：
+
+\begin{lstlisting}[language=C++]
+char buf[10];
+std::cin >> buf;
+\end{lstlisting}
+
+如果用户输入了 18 个字符呢？缓存会溢出，坏事发生。通常来说，对于用户输入多少字符做任何的预期都是一个坏的主意。
+
+其中一个解决该问题的方案是使用调制器。\textbf{调制器} manipulator 是一个当应用了提取符（>>）或插入（\acode{setw} 位于 iomanip 头文件中）的流时，
+用作修改流的对象，其可用于限制字符读取进流的数量。使用 \acode{setw()} 只需要简单的提供一个最大字符数作为读取的参数，并插入至输入声明中。
+
+\begin{lstlisting}[language=C++]
+#include <iomanip>
+char buf[10];
+std::cin >> std::setw(10) >> buf;
+\end{lstlisting}
+
+该程序现在只会从流中读取前 9 个字符（为结束符留位置）。任何剩余的字符将被留在流中，直到下一次提取。
+
+\subsubsection*{提取与空白字符}
+
+作为提醒，提取操作符跳过空白字符（空格，tabs，以及换行）。
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    char ch;
+    while (std::cin >> ch)
+        std::cout << ch;
+
+    return 0;
+}
+\end{lstlisting}
+
+当用户进行以下输入：
+
+\begin{lstlisting}
+Hello my name is Alex
+\end{lstlisting}
+
+提取操作符跳过空格与换行，输出：
+
+\begin{lstlisting}
+HellomynameisAlex
+\end{lstlisting}
+
+大多数时候并不想抛弃空格，为此 istream 类提供了一些函数来帮助我们。其中一个最常用的是 \textbf{get()} 函数：
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    char ch;
+    while (std::cin.get(ch))
+        std::cout << ch;
+
+    return 0;
+}
+\end{lstlisting}
+
+现在再输入：
+
+\begin{lstlisting}
+Hello my name is Alex
+\end{lstlisting}
+
+那么输出则是：
+
+\begin{lstlisting}
+Hello my name is Alex
+\end{lstlisting}
+
+\acode{std::get()} 同样还有一个字符串版本，用作带有上限的字符读取：
+
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    char strBuf[11];
+    std::cin.get(strBuf, 11);
+    std::cout << strBuf << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+现在输入：
+
+\begin{lstlisting}
+Hello my name is Alex
+\end{lstlisting}
+
+其输出则是：
+
+\begin{lstlisting}
+Hello my n
+\end{lstlisting}
+
+注意只读取了前 10 个字符（我们需要留一个字符给终止符），而剩下的字符仍然留在输入流中。
+
+\acode{get()} 函数中有一点需要注意的是其不会读取换行字符！这会导致一些非预期的结果：
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    char strBuf[11];
+    // Read up to 10 characters
+    std::cin.get(strBuf, 11);
+    std::cout << strBuf << '\n';
+
+    // Read up to 10 more characters
+    std::cin.get(strBuf, 11);
+    std::cout << strBuf << '\n';
+    return 0;
+}
+\end{lstlisting}
+
+如果用户输入：
+
+\begin{lstlisting}
+Hello!
+\end{lstlisting}
+
+程序输出：
+
+\begin{lstlisting}
+Hello!
+\end{lstlisting}
+
+接着结束！为什么它不要求另外十个字符呢？这是因为第一个 \acode{get()} 读取到换行接着停止了。
+第二个 \acode{get()} 看到 cin 流中仍然有输入并尝试读取。但是第一个字符是换行，因此立刻停止。
+
+因此有另一个称为 \textbf{getline()} 的函数，其功能与 \acode{get()} 一致，但是会读取换行。
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    char strBuf[11];
+    // Read up to 10 characters
+    std::cin.getline(strBuf, 11);
+    std::cout << strBuf << '\n';
+
+    // Read up to 10 more characters
+    std::cin.getline(strBuf, 11);
+    std::cout << strBuf << '\n';
+    return 0;
+}
+\end{lstlisting}
+
+这个代码正如预期，即使用户输入了带有换行的字符串。
+
+如果需要知道上一次调用 \acode{getline()} 提取了多少字符，使用 \textbf{gcount()}：
+
+\begin{lstlisting}[language=C++]
+int main()
+{
+    char strBuf[100];
+    std::cin.getline(strBuf, 100);
+    std::cout << strBuf << '\n';
+    std::cout << std::cin.gcount() << " characters were read" << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{std::string 的一个特殊版本的 getline()}
+
+还有一个特殊版本的 \acode{getline()} 位于 istream 类之外，用于读取 std::string 变量中的值。
+这个特殊的版本并不是 ostream 或是 istream 中的成员，它是位于 string 头文件中。
+
+\begin{lstlisting}[language=C++]
+#include <string>
+#include <iostream>
+
+int main()
+{
+    std::string strBuf;
+    std::getline(std::cin, strBuf);
+    std::cout << strBuf << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection*{一些额外的有用的 istream 函数}
+
+还有一些有用的输入函数用户可能需要会用到：
+
+\begin{itemize}
+    \item \textbf{ignore()} 丢弃流中的第一个字符
+    \item \textbf{ignore(int nCount)} 丢弃流中前 nCount 的字符
+    \item \textbf{peek()} 允许从流中读取字符而不移除它
+    \item \textbf{unget()} 返回最后一个字符并不消耗它，这样在下次调用时可以再次读取
+    \item \textbf{putback(char ch)} 允许将一个字符放入流中，下次调用时读取
+\end{itemize}
+
+\end{document}
