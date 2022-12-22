@@ -65,7 +65,7 @@ catch (const PersonException& exception)
 
 如果 \acode{processPerson()} 抛出异常，控制流调转到捕获句柄。
 结果 john 永远没有被释放！
-这个例子比上一个例子更为狡猾 --
+这个例子比上一个例子更为棘手 --
 因为 john 是属于 try block 本地的，它会在 try block 退出时离开作用域。
 这就意味着异常处理完全不能访问 john（它已经被销毁了），因此没有办法释放其内存。
 

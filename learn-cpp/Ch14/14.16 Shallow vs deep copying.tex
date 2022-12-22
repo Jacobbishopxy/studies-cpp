@@ -240,7 +240,7 @@ MyString::MyString(const MyString& source)
 如所见这比浅拷贝涉及的内容更多！首先，需要确保源拥有字符串（行 11）。如果有则分配足够的内存用于存储字符串的拷贝（行 14）。
 最后需要手动的拷贝字符串（行 17 与 18）。
 
-现在进行重载赋值操作符，它会有一点狡猾：
+现在进行重载赋值操作符，它会有一点棘手：
 
 \begin{lstlisting}[language=C++]
 // 赋值操作符
@@ -260,9 +260,9 @@ MyString& MyString::operator=(const MyString& source)
 注意赋值操作符与拷贝构造函数类似，但是有三个主要的不同点：
 
 \begin{itemize}
-  \item 添加了一个自赋值检测
-  \item 返回 *this 使得可以串联赋值操作符
-  \item 需要显式的释放任何其存储的字符串（当 m\_data 之后被释放时，不会有内存泄漏）。这步在 \acode{deepCopy()} 中完成。
+    \item 添加了一个自赋值检测
+    \item 返回 *this 使得可以串联赋值操作符
+    \item 需要显式的释放任何其存储的字符串（当 m\_data 之后被释放时，不会有内存泄漏）。这步在 \acode{deepCopy()} 中完成。
 \end{itemize}
 
 当重载赋值操作符被调用，被赋值的想有可能已包含了之前的值，我们需要确保在赋与新值内存之前清理它。对于非动态分配的变量（即固定大小）而言，
@@ -278,9 +278,9 @@ MyString& MyString::operator=(const MyString& source)
 \subsubsection*{总结}
 
 \begin{itemize}
-  \item 默认拷贝构造函数以及默认赋值操作符皆为浅拷贝，对于不含动态分配变量的类而言是可行的。
-  \item 拥有动态分配变量的类的拷贝构造函数以及赋值操作符必须要进行深拷贝。
-  \item 优先考虑使用标准库所提供的类而不是用户手动进行内存管理。
+    \item 默认拷贝构造函数以及默认赋值操作符皆为浅拷贝，对于不含动态分配变量的类而言是可行的。
+    \item 拥有动态分配变量的类的拷贝构造函数以及赋值操作符必须要进行深拷贝。
+    \item 优先考虑使用标准库所提供的类而不是用户手动进行内存管理。
 \end{itemize}
 
 \end{document}
