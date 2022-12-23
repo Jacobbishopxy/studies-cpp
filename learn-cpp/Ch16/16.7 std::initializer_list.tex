@@ -119,11 +119,10 @@ int main()
 \acode{std::initializer\_list} 位于 \acode{<initializer\_list>} 头文件。
 
 关于 \acode{std::initializer\_list} 有几点需要知道的。
-类似于 \acode{std::array} 或 \acode{std::vector}，
-需要通过尖括号告诉 \acode{std::initializer\_list} 数据的类型，
+
+类似于 \acode{std::array} 或 \acode{std::vector}，需要通过尖括号告诉 \acode{std::initializer\_list} 数据的类型，
 除非是直接对 \acode{std::initializer\_list} 进行初始化。
-因此几乎见不到一个纯 \acode{std::initializer\_list}，
-而是类似于 \acode{std::initializer\_list<int>} 或者 \acode{std::initializer\_list<std::string>}。
+因此几乎见不到一个纯 \acode{std::initializer\_list}，而是类似于 \acode{std::initializer\_list<int>} 或者 \acode{std::initializer\_list<std::string>}。
 
 其次，\acode{std::initializer\_list} 拥有一个 \acode{size()} 函数（取名不当），
 其返回列表中元素的数量。

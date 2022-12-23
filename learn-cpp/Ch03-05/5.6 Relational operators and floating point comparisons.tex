@@ -8,25 +8,25 @@
 \textbf{关系操作符} relational operators 是用于比较两个值的操作符。一共有六种：
 
 \begin{center}
-    \begin{tiny}
-        \begin{tabularx}{ 1\textwidth}{
-                | >{\raggedright\arraybackslash}X
-                | >{\raggedright\arraybackslash}X
-                | >{\raggedright\arraybackslash}X
-                | >{\raggedright\arraybackslash}X |
-            }
-            \hline
-            操作符                    & 符号 & 形式     & 操作                                                       \\
-            \hline
-            Greater than           & >  & x > y  & true if x is greater than y, false otherwise             \\
-            Less than              & <  & x < y  & true if x is less than y, false otherwise                \\
-            Greater than or equals & >= & x >= y & true if x is greater than or equal to y, false otherwise \\
-            Less than or equals    & <= & x <= y & true if x is less than or equal to y, false otherwise    \\
-            Equality               & == & x == y & true if x equals y, false otherwise                      \\
-            Inequality             & != & x != y & true if x does not equal y, false otherwise              \\
-            \hline
-        \end{tabularx}
-    \end{tiny}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      操作符                    & 符号 & 形式     & 操作                                                       \\
+      \hline
+      Greater than           & >  & x > y  & true if x is greater than y, false otherwise             \\
+      Less than              & <  & x < y  & true if x is less than y, false otherwise                \\
+      Greater than or equals & >= & x >= y & true if x is greater than or equal to y, false otherwise \\
+      Less than or equals    & <= & x <= y & true if x is less than or equal to y, false otherwise    \\
+      Equality               & == & x == y & true if x equals y, false otherwise                      \\
+      Inequality             & != & x != y & true if x does not equal y, false otherwise              \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
 \end{center}
 
 \subsubsection*{比较计算后的浮点值会出问题}
@@ -58,7 +58,7 @@ int main()
 d1 > d2
 \end{lstlisting}
 
-如果在调试器中检查 d1 与 d2 的值可能会发现 d1 = 0.0100000000000005116 以及 d2 = 0.0099999999999997868。
+如果在调试器中检查 d1 与 d2 的值，那么可能会得到 d1 = 0.0100000000000005116 以及 d2 = 0.0099999999999997868。
 两个数字都接近 0.01，但是 d1 要大一些，而 d2 要小一些。
 
 如果需要高精度，那么使用任何关系操作符来比较浮点数是很危险的。这是因为浮点数并不精确，且对其进行小的取整可能会导致非预期的结果。

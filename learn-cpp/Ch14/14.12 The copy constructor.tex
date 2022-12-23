@@ -268,7 +268,7 @@ int main()
 }
 \end{lstlisting}
 
-思考一下这个代码是如何工作的。首先直接初始化了一个匿名的 Fraction 对象，使用了 \acode{Fraction(int, int)} 构造函数。
+现在来思考一下这个代码是如何工作的。首先，直接初始化了一个匿名的 Fraction 对象，使用了 \acode{Fraction(int, int)} 构造函数。
 接着使用该匿名对象作为 Fraction fiveThirds 的初始对象。因为匿名对象是一个 Fraction，那么 fiveThirds 应该调用拷贝构造函数对么？
 
 编译并运行这段程序，可能会认为答案如下：

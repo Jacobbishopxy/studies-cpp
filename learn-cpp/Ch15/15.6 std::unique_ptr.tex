@@ -37,7 +37,7 @@ void someFunction()
 总是将分配智能指针在栈上（作为本地变量或者类的组合成员），当函数或者包含其的对象结束时，
 保证智能指针可以正确的离开作用域，以确保其所拥有的对象能被正确的释放。
 
-C++11 标准库带来了 4 种智能指针类：\acode{std::auto\_ptr}（在 C++17 中移除）,
+C++11 的标准库提供了 4 种智能指针类：\acode{std::auto\_ptr}（在 C++17 中移除）,
 \acode{std::unique\_ptr}， \acode{std::shared\_ptr} 以及 \acode{std::weak\_ptr}。
 其中 \acode{std::unique\_ptr} 是现今使用的最广泛的智能指针类，因此我们首先学习它。
 之后的章节中再覆盖 \acode{std::shared\_ptr} 以及 \acode{std::weak\_ptr}。
@@ -277,7 +277,7 @@ int main()
 而 C++17 或之后，返回会被省略。
 这就使得通过 \acode{std::unique\_ptr} 返回一个资源比起返回裸指针更为安全！
 
-通常而言，不应该返回指针（也永远不要）或者引用（除非有特殊的编译原因）的 \acode{std::unique\_ptr} 。
+通常而言，用户不应该返回指针（也永远不要）或者引用（除非有特殊的编译原因）的 \acode{std::unique\_ptr} 。
 
 \subsubsection*{传递 std::unique\_ptr 至函数}
 

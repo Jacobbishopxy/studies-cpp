@@ -14,7 +14,8 @@
 
 2.8 中学到的用户可以在其他的文件中，从其定义的地方调用函数。这是因为函数默认是 external linkage 的。
 
-为了在其他文件中调用，用户必须为需要调用的函数放置一个 `forward declaration`。前向声明可以告诉编译器函数的存在，linker 则关联函数调用至其真正定义的地方。
+为了在其他文件中调用，用户必须为需要调用的函数放置一个前向声明 \acode{forward declaration}。
+前向声明可以告诉编译器函数的存在，linker 则关联函数调用至其真正定义的地方。
 
 \subsubsection*{全局变量带有 external linkage}
 
@@ -23,7 +24,7 @@
 
 \subsubsection*{变量通过 extern 关键字前向声明}
 
-为了在其它文件中可以使用到 external 的全局变量，用户在其他文件中必须放置该变量的 \acode{forward declaration}。
+为了在其它文件中可以使用到 external 的全局变量，用户在其他文件中必须放置该变量的前向声明 \acode{forward declaration}。
 而对于变量而言，为其创建一个前向声明也是通过 \acode{extern} 关键字（并且不带初始值）。
 
 \subsubsection*{文件作用域 vs. 全局作用域}

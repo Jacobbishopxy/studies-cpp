@@ -81,8 +81,7 @@ namespace std
 这两个类才是用户真实使用的。\acode{std::string} 用于标准 ascii 以及 utf-8 字符串；
 \acode{std::wstring} 用于宽字符/unicode（utf-16）字符串。
 
-尽管用户将直接使用 \acode{std::string} 与 \acode{std::wstring}，
-所有的字符串功能都是实现在 \acode{basic\_string} 类中。
+尽管用户直接使用 \acode{std::string} 与 \acode{std::wstring}，然而所有的字符串功能都是实现在 \acode{basic\_string} 类中。
 \acode{std::string} 与 \acode{std::wstring} 可以直接通过虚函数来访问这些功能，
 因此所有展现在 \acode{basic\_string} 上的函数都可以在它们身上生效。
 然而因为 \acode{basic\_string} 是一个模板类，
@@ -92,92 +91,92 @@ namespace std
 以下是字符串类的所有函数。大多数函数都有若干处理不同类型输入的功能，这些将会在下一节深入。
 
 \begin{center}
-    \begin{tiny}
-        \begin{tabularx}{ 1\textwidth}{
-                | >{\raggedright\arraybackslash}X
-                | >{\raggedright\arraybackslash}X |
-            }
-            \hline
-            函数                         & 效果                                                                                  \\
-            \hline
-            \multicolumn{2}{|c|}{Creation and destruction }                                                                  \\
-            \hline
-            (constructor)              & Create or copy a string                                                             \\
-            (destructor)               & Destroy a string                                                                    \\
-            \hline
-            \multicolumn{2}{|c|}{Size and capacity}                                                                          \\
-            \hline
-            capacity()                 & Returns the number of characters that can be held without reallocation              \\
-            empty()                    & Returns a boolean indicating whether the string is empty                            \\
-            length(), size()           & Returns the number of characters in string                                          \\
-            max\_size()                & Returns the maximum string size that can be allocated                               \\
-            reserve()                  & Expand or shrink the capacity of the string                                         \\
-            \hline
-            \multicolumn{2}{|c|}{Element access}                                                                             \\
-            \hline
-            $\left[\right]$, at()      & Accesses the character at a particular index                                        \\
-            \hline
-            \multicolumn{2}{|c|}{Modification}                                                                               \\
-            \hline
-            =, assign()                & Assigns a new value to the string                                                   \\
-            +=, append(), push\_back() & Concatenates characters to end of the string                                        \\
-            insert()                   & Inserts characters at an arbitrary index in string                                  \\
-            clear()                    & Delete all characters in the string                                                 \\
-            erase()                    & Erase characters at an arbitrary index in string                                    \\
-            replace()                  & Replace characters at an arbitrary index with other characters                      \\
-            resize()                   & Expand or shrink the string (truncates or adds characters at end of string)         \\
-            swap()                     & Swaps the value of two strings                                                      \\
-            \hline
-            \multicolumn{2}{|c|}{Input and Output}                                                                           \\
-            \hline
-            >>, getline()              & Reads values from the input stream into the string                                  \\
-            <<                         & Writes string value to the output stream                                            \\
-            c\_str()                   & Returns the contents of the string as a NULL-terminated C-style string              \\
-            copy()                     & Copies contents (not NULL-terminated) to a character array                          \\
-            data()                     & Same as c\_str(). The non-const overload allows writing to the returned string.     \\
-            \hline
-            \multicolumn{2}{|c|}{String comparison}                                                                          \\
-            \hline
-            ==, !=                     & Compares whether two strings are equal/unequal (returns bool)                       \\
-            <, <=, > >=                & Compares whether two strings are less than / greater than each other (returns bool) \\
-            compare()                  & Compares whether two strings are equal/unequal (returns -1, 0, or 1)                \\
-            \hline
-            \multicolumn{2}{|c|}{Substrings and concatenation}                                                               \\
-            \hline
-            +                          & Concatenates two strings                                                            \\
-            substr()                   & Returns a substring                                                                 \\
-            \hline
-            \multicolumn{2}{|c|}{Searching}                                                                                  \\
-            \hline
-            find()                     & Find index of first character/substring                                             \\
-            find\_first\_of()          & Find index of first character from a set of characters                              \\
-            find\_first\_not\_of()     & Find index of first character not from a set of characters                          \\
-            find\_last\_of()           & Find index of last character from a set of characters                               \\
-            find\_last\_not\_of()      & Find index of last character not from a set of characters                           \\
-            rfind()                    & Find index of last character/substring                                              \\
-            \hline
-            \multicolumn{2}{|c|}{Iterator and allocator support}                                                             \\
-            \hline
-            begin(), end()             & Forward-direction iterator support for beginning/end of string                      \\
-            get\_allocator()           & Returns the allocator                                                               \\
-            rbegin(), rend()           & Reverse-direction iterator support for beginning/end of string                      \\
-            \hline
-        \end{tabularx}
-    \end{tiny}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      函数                         & 效果                                                                                  \\
+      \hline
+      \multicolumn{2}{|c|}{Creation and destruction }                                                                  \\
+      \hline
+      (constructor)              & Create or copy a string                                                             \\
+      (destructor)               & Destroy a string                                                                    \\
+      \hline
+      \multicolumn{2}{|c|}{Size and capacity}                                                                          \\
+      \hline
+      capacity()                 & Returns the number of characters that can be held without reallocation              \\
+      empty()                    & Returns a boolean indicating whether the string is empty                            \\
+      length(), size()           & Returns the number of characters in string                                          \\
+      max\_size()                & Returns the maximum string size that can be allocated                               \\
+      reserve()                  & Expand or shrink the capacity of the string                                         \\
+      \hline
+      \multicolumn{2}{|c|}{Element access}                                                                             \\
+      \hline
+      $\left[\right]$, at()      & Accesses the character at a particular index                                        \\
+      \hline
+      \multicolumn{2}{|c|}{Modification}                                                                               \\
+      \hline
+      =, assign()                & Assigns a new value to the string                                                   \\
+      +=, append(), push\_back() & Concatenates characters to end of the string                                        \\
+      insert()                   & Inserts characters at an arbitrary index in string                                  \\
+      clear()                    & Delete all characters in the string                                                 \\
+      erase()                    & Erase characters at an arbitrary index in string                                    \\
+      replace()                  & Replace characters at an arbitrary index with other characters                      \\
+      resize()                   & Expand or shrink the string (truncates or adds characters at end of string)         \\
+      swap()                     & Swaps the value of two strings                                                      \\
+      \hline
+      \multicolumn{2}{|c|}{Input and Output}                                                                           \\
+      \hline
+      >>, getline()              & Reads values from the input stream into the string                                  \\
+      <<                         & Writes string value to the output stream                                            \\
+      c\_str()                   & Returns the contents of the string as a NULL-terminated C-style string              \\
+      copy()                     & Copies contents (not NULL-terminated) to a character array                          \\
+      data()                     & Same as c\_str(). The non-const overload allows writing to the returned string.     \\
+      \hline
+      \multicolumn{2}{|c|}{String comparison}                                                                          \\
+      \hline
+      ==, !=                     & Compares whether two strings are equal/unequal (returns bool)                       \\
+      <, <=, > >=                & Compares whether two strings are less than / greater than each other (returns bool) \\
+      compare()                  & Compares whether two strings are equal/unequal (returns -1, 0, or 1)                \\
+      \hline
+      \multicolumn{2}{|c|}{Substrings and concatenation}                                                               \\
+      \hline
+      +                          & Concatenates two strings                                                            \\
+      substr()                   & Returns a substring                                                                 \\
+      \hline
+      \multicolumn{2}{|c|}{Searching}                                                                                  \\
+      \hline
+      find()                     & Find index of first character/substring                                             \\
+      find\_first\_of()          & Find index of first character from a set of characters                              \\
+      find\_first\_not\_of()     & Find index of first character not from a set of characters                          \\
+      find\_last\_of()           & Find index of last character from a set of characters                               \\
+      find\_last\_not\_of()      & Find index of last character not from a set of characters                           \\
+      rfind()                    & Find index of last character/substring                                              \\
+      \hline
+      \multicolumn{2}{|c|}{Iterator and allocator support}                                                             \\
+      \hline
+      begin(), end()             & Forward-direction iterator support for beginning/end of string                      \\
+      get\_allocator()           & Returns the allocator                                                               \\
+      rbegin(), rend()           & Reverse-direction iterator support for beginning/end of string                      \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
 \end{center}
 
 虽然标准库的字符串类提供了非常多的功能，但是有一些被省略了的功能却值得注意：
 
 \begin{itemize}
-    \item 正则表达式的支持
-    \item 从数字创建字符串的构造函数
-    \item 首字母大写/大写/小写转换函数
-    \item 大小写不敏感的比较
-    \item 词语切分/分割字符成数组
-    \item 获取字符串左侧或右侧部分的简单函数
-    \item 空格修剪
-    \item 标准化字符串 sprintf 风格
-    \item utf-8 与 utf-16 间的互相转换
+  \item 正则表达式的支持
+  \item 从数字创建字符串的构造函数
+  \item 首字母大写/大写/小写转换函数
+  \item 大小写不敏感的比较
+  \item 词语切分/分割字符成数组
+  \item 获取字符串左侧或右侧部分的简单函数
+  \item 空格修剪
+  \item 标准化字符串 sprintf 风格
+  \item utf-8 与 utf-16 间的互相转换
 \end{itemize}
 
 对于上述这些需求，需要用户自己编写函数，或者是转换字符串为 C-style 字符串（使用 \acode{c\_str()}）并使用 C 所提供的这些功能的函数。

@@ -161,7 +161,8 @@ my_pair.first: MoveClass(empty)
 destroying MoveClass(empty)
 \end{lstlisting}
 
-现在来探讨一下发生了些什么。
+现在来探讨一下具体发生了些什么。
+
 第一个打印出的行展示了用于初始化 \acode{my\_pair} 的临时 \acode{MoveClass} 对象，
 其在 \acode{my\_pair} 实例化声明被执行之后立刻被销毁。
 它为 \acode{empty} 是因为在 \acode{my\_pair} 中的 \acode{MoveClass} 子对象是由移动构造的，
@@ -191,8 +192,7 @@ destroying MoveClass(empty)
 
 幸运的是 C++ 有两种机制，可以组合在一起使用。
 
-首先因为 \acode{noexcept} 函数是 no-throw/no-fail 的，
-它们隐式的符合 \acode{strong exception guarantee} 标准。
+首先 \acode{noexcept} 函数是 no-throw/no-fail 的，它们是隐式符合 \acode{strong exception guarantee} 标准。
 因此 \acode{noexcept} 移动构造函数是被保证可以成功的。
 
 其次是使用标准库的函数 \acode{std::move\_if\_noexcept} 在移动构造函数中
@@ -200,8 +200,7 @@ destroying MoveClass(empty)
 那么 \acode{std::move\_if\_noexcept} 将与 \acode{std::move} 完全相同（且返回被转换成右值的对象）。
 否则 \acode{std::move\_if\_noexcept} 将返回对象的一个普通的左值引用。
 
-关键点：如果对象拥有一个 noexcept 移动构造函数，
-\acode{std::move\_if\_noexcept} 将返回一个可移动的右值，
+关键点：如果对象拥有一个 noexcept 移动构造函数，那么 \acode{std::move\_if\_noexcept} 将返回一个可移动的右值，
 否则将返回可拷贝的左值。
 可以使用 \acode{noexcept} 说明符作为连接 \acode{std::move\_if\_noexcept}，
 在当强异常保证存在时，使用移动语义（否则使用拷贝语义）。

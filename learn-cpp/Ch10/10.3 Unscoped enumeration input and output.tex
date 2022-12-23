@@ -134,7 +134,7 @@ int main()
 
 然而这个版本仍然没有效率，因为每次函数被调用时都需要创建并返回 \acode{std::string}（非常的昂贵）。
 
-C++17 中，一个更好的方法是用 \acode{std::string_view} 来代替 \acode{std::string}。
+在 C++17 中，一个更好的方法是使用 \acode{std::string_view} 来代替 \acode{std::string}。
 \acode{std::string_view} 允许用户返回字符串字面量并且拷贝起来没有那么的昂贵。
 
 \begin{lstlisting}[language=C++]

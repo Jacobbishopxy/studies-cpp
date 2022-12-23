@@ -162,7 +162,7 @@ no-fail 保证：函数总能成功（因此拥有不需要抛出异常，因此
 最佳实践：当允许时，为构造函数与重载赋值操作符加上 \acode{noexcept}。
 其它希望表达 no-fail 或 no-throw 保证的函数也加上 \acode{noexcept}。
 
-最佳实践：如果不能确定一个函数是否有 no-fail/no-throw 保证，谨慎起见不要标记其 \acode{noexcept}。
+最佳实践：如果不能确定函数是否带有 no-fail 或 no-throw 的保证，那么谨慎起见不要标记其 \acode{noexcept}。
 若是移除原本的 noexcept 则会违反一个接口向用户承诺的行为功能，也可能会破坏已有代码。
 为了更强的保证，在之后给非 noexcept 函数添加 noexcept 是被视为安全的。
 
