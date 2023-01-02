@@ -1,0 +1,153 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{4}{Stream classes for strings}
+
+迄今为止所接触到的所有 I/O 例子都是 cout 写入或者 cin 读取。然而还有另外一套关于字符串流的类，允许用户对字符串进行插入（<<）以及提取（>>）操作符。
+类似于 istream 与 ostream，字符串流提供了一个缓存用于存储数据。然而不同于 cin 与 cout，这些流并没有连接到一个 I/O 管道（例如键盘，显示器灯）。
+字符串流的一个最主要使用时缓存用于展示的输出，或者处理一行一行的输入。
+
+字符串有六种流类：istringstream（从 istream 派生），ostringstream（从 ostream 派生），以及 stringstream（从 iostream 派生）用于读取与写入
+普通字符宽度的字符串，wistringstream，wostringstream，以及 wstringstream 用于读取与写入宽字符的字符串。需要 \#include \acode{sstream} 头文件，
+才能使用 stringstreams。
+
+有两种存储 stringstream 数据的方式：
+
+\begin{enumerate}
+      \item 使用插入（<<）操作符：
+            \begin{lstlisting}[language=C++]
+        std::stringstream os;
+        os << "en garde!\n"; // insert "en garde!" into the stringstream
+        \end{lstlisting}
+      \item 使用 str(string) 函数来设置缓存的值：
+            \begin{lstlisting}[language=C++]
+        std::stringstream os;
+        os.str("en garde!"); // set the stringstream buffer to "en garde!"
+        \end{lstlisting}
+\end{enumerate}
+
+有两种类似的获取 stringstream 数据的方式：
+
+\begin{enumerate}
+      \item 使用 \acode{str()} 函数来获取缓存的数据：
+            \begin{lstlisting}[language=C++]
+        std::stringstream os;
+        os << "12345 67.89\n";
+        std::cout << os.str();
+        \end{lstlisting}
+            打印：
+            \begin{lstlisting}
+        12345 67.89
+        \end{lstlisting}
+      \item 使用提取（>>）操作符：
+            \begin{lstlisting}[language=C++]
+        std::stringstream os;
+        os << "12345 67.89"; // insert a string of numbers into the stream
+
+        std::string strValue;
+        os >> strValue;
+
+        std::string strValue2;
+        os >> strValue2;
+
+        // print the numbers separated by a dash
+        std::cout << strValue << " - " << strValue2 << '\n';
+        \end{lstlisting}
+            打印：
+            \begin{lstlisting}
+        12345 - 67.89
+        \end{lstlisting}
+\end{enumerate}
+
+\subsubsection*{字符串与数字间的转换}
+
+由于插入与提取操作符明白如何与所有基础数据类型工作，我们可以使用它们来转换字符成为数字，反之亦然。
+
+首先看一下数值转字符串：
+
+\begin{lstlisting}[language=C++]
+std::stringstream os;
+
+int nValue{ 12345 };
+double dValue{ 67.89 };
+os << nValue << ' ' << dValue;
+
+std::string strValue1, strValue2;
+os >> strValue1 >> strValue2;
+
+std::cout << strValue1 << ' ' << strValue2 << '\n';
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+12345 67.89
+\end{lstlisting}
+
+再是数值字符串转数值：
+
+\begin{lstlisting}[language=C++]
+std::stringstream os;
+os << "12345 67.89"; // insert a string of numbers into the stream
+int nValue;
+double dValue;
+
+os >> nValue >> dValue;
+
+std::cout << nValue << ' ' << dValue << '\n';
+\end{lstlisting}
+
+打印：
+
+\begin{lstlisting}
+12345 67.89
+\end{lstlisting}
+
+\subsubsection*{清空一个 stringstream 用作重用}
+
+有若干种办法可以清空一个 stringstream 缓存：
+
+\begin{enumerate}
+      \item 使用 \acode{str()} 与空的 C-style 字符串，设置其为空字符串：
+            \begin{lstlisting}[language=C++]
+      std::stringstream os;
+      os << "Hello ";
+
+      os.str(""); // erase the buffer
+
+      os << "World!";
+      std::cout << os.str();
+      \end{lstlisting}
+      \item 使用 \acode{str()} 与空的 \acode{std::string} 对象，设置其为空字符串：
+            \begin{lstlisting}[language=C++]
+      std::stringstream os;
+      os << "Hello ";
+
+      os.str(std::string{}); // erase the buffer
+
+      os << "World!";
+      std::cout << os.str();
+      \end{lstlisting}
+\end{enumerate}
+
+它们都会打印以下结果：
+
+\begin{lstlisting}
+World!
+\end{lstlisting}
+
+当清理一个 stringstream 时，调用 \acode{clear()} 函数通常是一个好主意：
+
+\begin{lstlisting}[language=C++]
+std::stringstream os;
+os << "Hello ";
+
+os.str(""); // erase the buffer
+os.clear(); // reset error flags
+
+os << "World!";
+std::cout << os.str();
+\end{lstlisting}
+
+\end{document}
