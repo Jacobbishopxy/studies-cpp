@@ -1,0 +1,356 @@
+\documentclass[../../LearnCpp.tex]{subfiles}
+
+\begin{document}
+
+\asubsection{5}{Stream states and input validation}
+
+\subsubsection*{流状态}
+
+ios\_base 类包含若干状态 flags 用于标记不同情况下可能的状态：
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Flag    & Meaning                                                                                              \\
+      \hline
+      goodbit & Everything is okay                                                                                   \\
+      badbit  & Some kind of fatal error occurred (e.g. the program tried to read past the end of a file)            \\
+      eofbit  & The stream has reached the end of a file                                                             \\
+      failbit & A non-fatal error occurred (e.g. the user entered letters when the program was expecting an integer) \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+尽管这些 flags 存在于 ios\_base 中，由于 ios 是从 ios\_base 派生而来的，且 ios 相比于 ios\_base 只需少量打字，
+因此我们通常通过 ios 使用它们（例如 \acode{std::ios::failbit}）。
+
+ios 同样提供了一系列成员函数用于方便的使用这些状态：
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Member          & function	Meaning                                                       \\
+      \hline
+      good()          & Returns true if the goodbit is set (the stream is ok)                  \\
+      bad()           & Returns true if the badbit is set (a fatal error occurred)             \\
+      eof()           & Returns true if the eofbit is set (the stream is at the end of a file) \\
+      fail()          & Returns true if the failbit is set (a non-fatal error occurred)        \\
+      clear()         & Clears all flags and restores the stream to the goodbit state          \\
+      clear(state)    & Clears all flags and sets the state flag passed in                     \\
+      rdstate()       & Returns the currently set flags                                        \\
+      setstate(state) & Sets the state flag passed in                                          \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+处理 bit 最常用的是 failbit，当用户的输入无效时它会被设置。例如，考虑以下程序：
+
+\begin{lstlisting}[language=C++]
+std::cout << "Enter your age: ";
+int age {};
+std::cin >> age;
+\end{lstlisting}
+
+注意该程序预期用户输入一个整数，然而如果用户输入非数值数据，例如 “Alex”，cin 将无法提取任何东西到 age，此时 failbit 将被设置。
+
+如果错误出现且一个流被设置了除了 goodbit 以外的任何标记，之后对该流进行的所有流操作将被忽略。这个状态可以通过调用 \acode{clear()} 函数来进行清除。
+
+\subsubsection*{输入校验}
+
+\textbf{输入校验} input validation 是检查用户输入是否符合某些条件的一个过程。输入校验通常可以拆分为两种类型：字符串与数值。
+
+通过字符串校验，我们接受所有用户输入为字符串，然后根据其是否被正确的格式化来接受或拒绝该字符串。例如，如果要求用户输入一个电话号码，我们希望确保输入的数据有十位。
+在大多数语言中（特别是脚本语言例如 Perl 以及 PHP），这是通过正则表达来完成的。C++ 标准库同样也拥有一个正则表达库。因为正则表达式相比于手动字符串校验而言要慢很多，
+它们通常仅在不考虑性能（编译时间与运行时间）或者手动校验太笨重时使用。
+
+通过数值校验，我们通常将用户输入的数值确保在特定的范围内（例如在 0 到 20 之间）。然而不同于字符串校验，用户输入的完全不是数字是有可能的 -- 我们还需要处理这种情况。
+
+C++ 提供了一系列函数供用户决定特定字符是数值还是字符。下面这些函数存在于 \acode{cctype} 头文件中：
+
+\begin{center}
+  \begin{tiny}
+    \begin{tabularx}{ 1\textwidth}{
+        | >{\raggedright\arraybackslash}X
+        | >{\raggedright\arraybackslash}X |
+      }
+      \hline
+      Function           & Meaning                                                                         \\
+      \hline
+      std::isalnum(int)  & Returns non-zero if the parameter is a letter or a digit                        \\
+      std::isalpha(int)  & Returns non-zero if the parameter is a letter                                   \\
+      std::iscntrl(int)  & Returns non-zero if the parameter is a control character                        \\
+      std::isdigit(int)  & Returns non-zero if the parameter is a digit                                    \\
+      std::isgraph(int)  & Returns non-zero if the parameter is printable character that is not whitespace \\
+      std::isprint(int)  & Returns non-zero if the parameter is printable character (including whitespace) \\
+      std::ispunct(int)  & Returns non-zero if the parameter is neither alphanumeric nor whitespace        \\
+      std::isspace(int)  & Returns non-zero if the parameter is whitespace                                 \\
+      std::isxdigit(int) & Returns non-zero if the parameter is a hexadecimal digit (0-9, a-f, A-F)        \\
+      \hline
+    \end{tabularx}
+  \end{tiny}
+\end{center}
+
+\subsubsection*{字符串校验}
+
+现在让我们做一个简单的要求用户输入字符串的校验案例。校验的标准是用户仅输入字母字符或空格。如果任何其他类型的输入出现，输入则被拒绝。
+
+当遇到变量长度输入时，最好校验字符串的方式（在不使用一个正则表达式的库的情况下）是遍历每个字符并确保它符合校验标准。
+以下案例便是这么做的，或者更确切的说是 \acode{std::all_of} 做的。
+
+\begin{lstlisting}[language=C++]
+#include <algorithm> // std::all_of
+#include <cctype> // std::isalpha, std::isspace
+#include <iostream>
+#include <ranges>
+#include <string>
+#include <string_view>
+
+bool isValidName(std::string_view name)
+{
+  return std::ranges::all_of(name, [](char ch) {
+    return (std::isalpha(ch) || std::isspace(ch));
+  });
+
+  // Before C++20, without ranges
+  // return std::all_of(name.begin(), name.end(), [](char ch) {
+  //    return (std::isalpha(ch) || std::isspace(ch));
+  // });
+}
+
+int main()
+{
+  std::string name{};
+
+  do
+  {
+    std::cout << "Enter your name: ";
+    std::getline(std::cin, name); // get the entire line, including spaces
+  } while (!isValidName(name));
+
+  std::cout << "Hello " << name << "!\n";
+}
+\end{lstlisting}
+
+注意这段代码并不完美：用户可能会输入“asf w jweo s di we ao” 或者其它垃圾信息，或者更坏的是一堆空格。
+我们可以强化校验标准来避免上述问题。
+
+现在让我们看一下另一个例子，用户输入电话号码。不同于用户名，对于每个字符的长度与校验标准都是一致的，
+电话号码是固定长度的，但是校验标准根据字符所处的位置不同。因此我们需要不同的方法来处理电话号码的输入。
+编写的函数将会检查用户的输入是否与预定义的模板匹配。该模板的工作原理如下：
+
+\begin{itemize}
+  \item \# 将匹配任意用户输入的数值
+  \item @ 将匹配任何用户输入的字母
+  \item \_ 将匹配任何空值
+  \item ? 将匹配任意值
+\end{itemize}
+
+除此之外，用户的输入必须完全与模板匹配。
+
+那么如果询问函数匹配模板 \acode{(###)###-####}，意味着预期用户输入一个 \acode{(} 字符，三个数字，一个 \acode{)} 字符，
+一个空格，三个数字，一杠，以及四个数字。如果出现任何不匹配，输入将被拒绝。
+
+\begin{lstlisting}[language=C++]
+#include <algorithm> // std::equal
+#include <cctype> // std::isdigit, std::isspace, std::isalpha
+#include <iostream>
+#include <map>
+#include <ranges>
+#include <string>
+#include <string_view>
+
+bool inputMatches(std::string_view input, std::string_view pattern)
+{
+    if (input.length() != pattern.length())
+    {
+        return false;
+    }
+
+    // This table defines all special symbols that can match a range of user input
+    // Each symbol is mapped to a function that determines whether the input is valid for that symbol
+    static const std::map<char, int (*)(int)> validators{
+      { '#', &std::isdigit },
+      { '_', &std::isspace },
+      { '@', &std::isalpha },
+      { '?', [](int) { return 1; } }
+    };
+
+    // Before C++20, use
+    // return std::equal(input.begin(), input.end(), pattern.begin(), [](char ch, char mask) -> bool {
+    // ...
+
+    return std::ranges::equal(input, pattern, [](char ch, char mask) -> bool {
+        if (auto found{ validators.find(mask) }; found != validators.end())
+        {
+            // The pattern's current element was found in the validators. Call the
+            // corresponding function.
+            return (*found->second)(ch);
+        }
+        else
+        {
+            // The pattern's current element was not found in the validators. The
+            // characters have to be an exact match.
+            return (ch == mask);
+        }
+        });
+}
+
+int main()
+{
+    std::string phoneNumber{};
+
+    do
+    {
+        std::cout << "Enter a phone number (###) ###-####: ";
+        std::getline(std::cin, phoneNumber);
+    } while (!inputMatches(phoneNumber, "(###) ###-####"));
+
+    std::cout << "You entered: " << phoneNumber << '\n';
+}
+\end{lstlisting}
+
+使用该函数可以强制用户匹配特殊的格式。然而，该函数仍然若干约束：如果 \#，@，\_，以及 ? 是合法的用户字符输入，该函数不能正常工作，
+因为这些符号被赋予了特殊的含义。另外，有别于正则表达式，缺少一个模板符号用作于表示“一个数值字符可以被输入”。因此，这样一个模板不能被
+用于保证用户输入两个单词间添加一个空格，因为它不能处理单词变量的长度。正因上述问题，非模板处理通常更为合适。
+
+\subsubsection*{数值校验}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <limits>
+
+int main()
+{
+    int age{};
+
+    while (true)
+    {
+        std::cout << "Enter your age: ";
+        std::cin >> age;
+
+        if (std::cin.fail()) // no extraction took place
+        {
+            std::cin.clear(); // reset the state bits back to goodbit so we can use ignore()
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // clear out the bad input from the stream
+            continue; // try again
+        }
+
+        if (age <= 0) // make sure age is positive
+            continue;
+
+        break;
+    }
+
+    std::cout << "You entered: " << age << '\n';
+}
+\end{lstlisting}
+
+如果不想这样的输入有效，我们需要做一些额外的工作。幸运的是，之前的例子已经给出了一半的解决方案。我们可以使用 \acode{gcount()} 函数来
+决定多少字符被忽略。如果输出是有效的，\acode{gcount()} 应该返回 1（新行字符已被弃用了）。如果返回的数大于 1，那么用户的输入并不正确，
+我们需要问他们要新的输入。以下是例子：
+
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <limits>
+
+int main()
+{
+    int age{};
+
+    while (true)
+    {
+        std::cout << "Enter your age: ";
+        std::cin >> age;
+
+        if (std::cin.fail()) // no extraction took place
+        {
+            std::cin.clear(); // reset the state bits back to goodbit so we can use ignore()
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // clear out the bad input from the stream
+            continue; // try again
+        }
+
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // clear out any additional input from the stream
+        if (std::cin.gcount() > 1) // if we cleared out more than one additional character
+        {
+            continue; // we'll consider this input to be invalid
+        }
+
+        if (age <= 0) // make sure age is positive
+        {
+            continue;
+        }
+
+        break;
+    }
+
+    std::cout << "You entered: " << age << '\n';
+}
+\end{lstlisting}
+
+\subsubsection*{数值校验作为一个字符串}
+
+上述相当大的例子仅作用于简单的工作。另一种处理数值输入的方式是将它们读取成一个字符串。以下例子就是使用这样的方法论：
+
+\begin{lstlisting}[language=C++]
+#include <charconv> // std::from_chars
+#include <iostream>
+#include <optional>
+#include <string>
+#include <string_view>
+
+std::optional<int> extractAge(std::string_view age)
+{
+  int result{};
+  auto end{ age.data() + age.length() };
+
+  // Try to parse an int from age
+  if (std::from_chars(age.data(), end, result).ptr != end)
+  {
+    return {};
+  }
+
+  if (result <= 0) // make sure age is positive
+  {
+    return {};
+  }
+
+  return result;
+}
+
+int main()
+{
+  int age{};
+
+  while (true)
+  {
+    std::cout << "Enter your age: ";
+    std::string strAge{};
+    std::getline(std::cin >> std::ws, strAge);
+
+    if (auto extracted{ extractAge(strAge) })
+    {
+      age = *extracted;
+      break;
+    }
+  }
+
+  std::cout << "You entered: " << age << '\n';
+}
+\end{lstlisting}
+
+这种处理方式的工作量大小取决于验证参数和限制。
+
+如此可见，C++ 中的输入验证需要做大量的工作。幸运的是，很多这样的任务（例如作为一个字符串的数值校验）可以简单的转换成函数，即可以在不同的情况下进行复用。
+
+\end{document}

@@ -36,6 +36,7 @@
 main.dSYM
 main
 
-out/
+**/out/*
+!learn-cpp/out/LearnCpp.pdf
 *.log
 dev.tex

@@ -1,6 +1,6 @@
 # Studies Cpp
 
-A personal C-plus-plus study note.
+A personal C-plus-plus study note. Check [PDF](./learn-cpp/out/LearnCpp.pdf) for the latest output.
 
 ## References
 
