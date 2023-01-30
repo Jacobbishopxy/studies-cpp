@@ -46,4 +46,3 @@ install(
   crtp
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
-  

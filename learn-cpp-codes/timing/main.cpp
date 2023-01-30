@@ -9,13 +9,13 @@ const int g_arrayElements{10000};
 
 class Timer
 {
-  private:
+private:
   using Clock = std::chrono::steady_clock;
   using Second = std::chrono::duration<double, std::ratio<1>>;
 
   std::chrono::time_point<Clock> m_beg{Clock::now()};
 
-  public:
+public:
   void reset() { m_beg = Clock::now(); }
 
   double elapsed() const
