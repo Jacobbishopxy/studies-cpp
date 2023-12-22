@@ -151,7 +151,7 @@ A personal C-plus-plus study note. Check [PDF](./learn-cpp/out/LearnCpp.pdf) for
 
 - Each time adding an executable, add a new task as well.
 
-- Vscode intellisense `.vscode/c_cpp_properties.json`
+- Vscode intellisense `.vscode/c_cpp_properties.json`, [ref](https://code.visualstudio.com/docs/cpp/c-cpp-properties-schema-reference)
 
   - Ubuntu:
 
@@ -165,7 +165,7 @@ A personal C-plus-plus study note. Check [PDF](./learn-cpp/out/LearnCpp.pdf) for
     ]
     ```
 
-- `C_Cpp.clang_format_fallbackStyle` settings, from [this article](https://blog.csdn.net/caesar1228/article/details/123310200):
+- `C_Cpp.clang_format_fallbackStyle` settings, [ref](https://clang.llvm.org/docs/ClangFormatStyleOptions.html):
 
     ```txt
     ---
