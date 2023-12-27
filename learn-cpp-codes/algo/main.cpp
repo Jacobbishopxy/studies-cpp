@@ -29,6 +29,7 @@ int main(int argc, char const* argv[]) {
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <ranges>
 #include <string>
 #include <utility>
 #include <vector>

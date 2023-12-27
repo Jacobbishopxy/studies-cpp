@@ -1,13 +1,12 @@
-cmake_minimum_required(VERSION 3.14)
+# @file:	CMakeLists.txt
+# @author:	Jacob Xie
+# @date:	2023/12/27 15:57:40 Wednesday
+# @brief:
 
-project(cpp-starter LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(cpp20 cpp20/main.cpp cpp20/udf.cpp)
 
-add_executable(linkage_t linkage/main.cpp linkage/animal_e.cpp linkage/animal_i.cpp)
+add_executable(linkage linkage/main.cpp linkage/animal_e.cpp linkage/animal_i.cpp)
 
 add_executable(global_const global_const/main.cpp global_const/constants.h)
 
@@ -40,26 +39,3 @@ add_executable(move_cst_asg move_cst_asg/main.cpp move_cst_asg/arr_cp.h move_cst
 add_executable(stl_traits stl_traits/main.cpp)
 
 add_executable(crtp crtp/main.cpp)
-
-install(
-  TARGETS
-  cpp20
-  linkage_t
-  global_const
-  constexpr_consteval_fn
-  fn_template
-  ref_ptr
-  struct_size
-  algo
-  class_decl
-  friend_fn_cls
-  timing
-  composition
-  aggregation
-  association
-  virtual_covariant_rtn
-  move_cst_asg
-  stl_traits
-  crtp
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
