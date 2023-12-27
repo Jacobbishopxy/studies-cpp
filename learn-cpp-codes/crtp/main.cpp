@@ -6,9 +6,11 @@
  * additional reading about template: http://www.vishalchovatiya.com/c-template-a-quick-uptodate-look/
  */
 #include <atomic>
+#include <cassert>
 #include <cstdio>
 #include <exception>
 #include <iostream>
+#include <memory>
 #include <numbers>
 
 /**
@@ -136,7 +138,7 @@ class Container
     return *static_cast<T const*>(this);
   }
 
-  public:
+public:
   decltype(auto) front()
   {
     return *actual().begin();
@@ -165,7 +167,7 @@ class DynArray : public Container<DynArray<T>>
   size_t m_size;
   std::unique_ptr<T[]> m_data;
 
-  public:
+public:
   DynArray(size_t s)
       : m_size{s}, m_data{std::make_unique<T[]>(s)}
   {
@@ -210,7 +212,7 @@ class Printer
 {
   std::ostream& m_stream;
 
-  public:
+public:
   Printer(std::ostream& s)
       : m_stream{s}
   {
@@ -272,7 +274,7 @@ struct Animal
     return std::make_unique<Specific>(static_cast<Specific&>(*this));
   }
 
-  protected: // forcing Animal class to be inherited
+protected: // forcing Animal class to be inherited
   Animal() = default;
   Animal(const Animal&) = default;
 };
