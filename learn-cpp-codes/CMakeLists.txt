@@ -39,3 +39,5 @@ add_executable(move_cst_asg move_cst_asg/main.cpp move_cst_asg/arr_cp.h move_cst
 add_executable(stl_traits stl_traits/main.cpp)
 
 add_executable(crtp crtp/main.cpp)
+
+add_executable(crtp_et crtp/expression_templates.cpp)

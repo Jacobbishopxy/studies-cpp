@@ -40,3 +40,4 @@ main
 !learn-cpp/out/LearnCpp.pdf
 *.log
 dev.tex
+.cache

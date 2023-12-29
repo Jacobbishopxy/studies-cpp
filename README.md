@@ -100,6 +100,13 @@ A personal C-plus-plus study note. Check [PDF](./learn-cpp/out/LearnCpp.pdf) for
 
 ## Vscode settings
 
+- [Clangd extension](https://clangd.llvm.org/), after installation:
+
+  ```sh
+  cp ./clangd_17.0.3/bin/clangd /usr/bin/
+  cp -r ./clangd_17.0.3/lib/clang /usr/lib/
+  ```
+
 - C++ format in `settings.json`:
 
   ```json
